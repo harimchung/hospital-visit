@@ -1,121 +1,78 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 
+const logos = [
+  {
+    key: 'visitready-lockup-h',
+    title: '가로 잠금 (Lockup Horizontal)',
+    ext: 'png',
+    alt: 'VisitReady 가로 잠금 로고',
+    style: { width: 'auto', maxWidth: '480px' },
+  },
+  {
+    key: 'visitready-lockup-stacked',
+    title: '세로 잠금 (Lockup Stacked)',
+    ext: 'png',
+    alt: 'VisitReady 세로 잠금 로고',
+    style: { width: 'auto', maxWidth: '260px' },
+  },
+  {
+    key: 'visitready-mark-bubble',
+    title: '마크 버블 (Mark Bubble)',
+    ext: 'svg',
+    alt: 'VisitReady 마크 버블',
+    style: { width: '120px', height: '120px' },
+  },
+  {
+    key: 'visitready-wordmark',
+    title: '워드마크 (Wordmark)',
+    ext: 'svg',
+    alt: 'VisitReady 워드마크',
+    style: { width: '100%', maxWidth: '320px' },
+  },
+]
+
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="logo-sample">
+      <header className="sample-header">
+        <h1>VisitReady 로고 샘플</h1>
+        <p>public/에 넣은 로고 파일이 브라우저에서 정상적으로 로드되는지 확인한다.</p>
+      </header>
 
-      <div className="ticks"></div>
+      <main className="logo-grid">
+        {logos.map(({ key, title, ext, alt, style }) => (
+          <figure key={key} className="logo-card">
+            <div className="logo-media" style={style}>
+              <img
+                src={`/${key}.${ext}`}
+                alt={alt}
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.alt = `⚠️ 로드 실패: ${alt}`
+                  e.currentTarget.classList.add('failed')
+                }}
+              />
+            </div>
+            <figcaption>
+              <strong>{title}</strong>
+              <br />
+              <small>/{key}.</small>{ext}
+            </figcaption>
+          </figure>
+        ))}
+      </main>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <footer className="sample-footer">
+        <h2>참고</h2>
+        <ul>
+          <li>
+            <code>public/</code> 아래에 로고 파일을 넣으면 빌드 결과에도 그대로 포함된다.
+          </li>
+          <li>SVG는 <code>&lt;img&gt;</code>로도 쓸 수 있고, 추후 인라인으로 넣어도 된다.</li>
+          <li>실제 앱에서는 <code>src/assets/</code>에 넣고 Vite가 해시한 경로를 쓰는 방법도 있다.</li>
+        </ul>
+      </footer>
+    </div>
   )
 }
 
