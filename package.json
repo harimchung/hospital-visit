@@ -1,0 +1,8 @@
+{
+  "name": "hospital-visit",
+  "private": true,
+  "scripts": {
+    "ci-install": "cd hospital-visit-ready && npm install",
+    "build": "cd hospital-visit-ready && npm run build"
+  }
+}
