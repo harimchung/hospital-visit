@@ -1,7 +1,7 @@
 {
   "framework": "other",
-  "buildCommand": "cd hospital-visit-ready && npm install && npm run build",
   "installCommand": "cd hospital-visit-ready && npm install",
+  "buildCommand": "cd hospital-visit-ready && npx vite build",
   "outputDirectory": "hospital-visit-ready/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
