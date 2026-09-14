@@ -1,77 +1,137 @@
+import { useState, useRef, useEffect } from 'react'
 import './App.css'
 
-const logos = [
-  {
-    key: 'visitready-lockup-h',
-    title: '가로 잠금 (Lockup Horizontal)',
-    ext: 'png',
-    alt: 'VisitReady 가로 잠금 로고',
-    style: { width: 'auto', maxWidth: '480px' },
-  },
-  {
-    key: 'visitready-lockup-stacked',
-    title: '세로 잠금 (Lockup Stacked)',
-    ext: 'png',
-    alt: 'VisitReady 세로 잠금 로고',
-    style: { width: 'auto', maxWidth: '260px' },
-  },
-  {
-    key: 'visitready-mark-bubble',
-    title: '마크 버블 (Mark Bubble)',
-    ext: 'svg',
-    alt: 'VisitReady 마크 버블',
-    style: { width: '120px', height: '120px' },
-  },
-  {
-    key: 'visitready-wordmark',
-    title: '워드마크 (Wordmark)',
-    ext: 'svg',
-    alt: 'VisitReady 워드마크',
-    style: { width: '100%', maxWidth: '320px' },
-  },
+const bodyParts = [
+  { id: 'head', label: '머리' },
+  { id: 'face-neck', label: '얼굴·목' },
+  { id: 'chest-back', label: '가슴·등' },
+  { id: 'abdomen', label: '배' },
+  { id: 'arm-leg', label: '팔·다리' },
+  { id: 'hand-foot', label: '손·발' },
+  { id: 'other', label: '그 외' },
 ]
 
 function App() {
+  const [messages, setMessages] = useState([
+    { id: 'sys-1', role: 'system', text: '어디가 아픈가요?' }
+  ])
+  const [input, setInput] = useState('')
+  const [selectedPart, setSelectedPart] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [toast, setToast] = useState(null)
+
+  const chatEndRef = useRef(null)
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const sendText = () => {
+    const text = input.trim()
+    if (!text) return
+    if (selectedPart === null) {
+      setMessages(m => [
+        ...m,
+        { id: `user-${Date.now()}`, role: 'user', text },
+        {
+          id: `sys-${Date.now()}`,
+          role: 'system',
+          text: '말씀해 주신 내용을 잘 받아뒀어요. 아래 버튼으로 부위를 한 번 더 골라 주실 수도 있어요.'
+        }
+      ])
+      return
+    }
+    setMessages(m => [...m, { id: `user-${Date.now()}`, role: 'user', text }])
+    setInput('')
+  }
+
+  const selectPart = (id, label) => {
+    setSelectedPart(id)
+    setMessages(m => [
+      ...m,
+      { id: `sys-${Date.now()}`, role: 'system', text: `${label}이(가) 아프시군요. 어떻게 아픈지 말씀해 주세요.` }
+    ])
+  }
+
+  const handleLogin = () => {
+    setToast('로그인 기능은 곧 추가됩니다.')
+    setTimeout(() => setToast(null), 2500)
+  }
+
   return (
-    <div className="logo-sample">
-      <header className="sample-header">
-        <h1>VisitReady 로고 샘플</h1>
-        <p>public/에 넣은 로고 파일이 브라우저에서 정상적으로 로드되는지 확인한다.</p>
+    <div className="app-shell">
+      <header className="topbar">
+        <button className="sidebar-toggle" type="button" onClick={() => setSidebarOpen((v) => !v)} aria-label="사이드바 토글">
+          <span className="hamburger" />
+        </button>
+        <div className="brand">
+          <img src="/visitready-mark-bubble.svg" alt="VisitReady" className="brand-logo" />
+        </div>
+        <button className="login-btn" type="button" onClick={handleLogin}>로그인하기</button>
       </header>
 
-      <main className="logo-grid">
-        {logos.map(({ key, title, ext, alt, style }) => (
-          <figure key={key} className="logo-card">
-            <div className="logo-media" style={style}>
-              <img
-                src={`/${key}.${ext}`}
-                alt={alt}
-                loading="lazy"
-                onError={(e) => {
-                  e.currentTarget.alt = `⚠️ 로드 실패: ${alt}`
-                  e.currentTarget.classList.add('failed')
-                }}
-              />
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} aria-hidden={!sidebarOpen}>
+        <div className="sidebar-inner">
+          <div className="sidebar-empty">
+            <p>진행 단계가 들어갈 곳이에요.</p>
+            <p className="muted">아직 시작하지 않았어요.</p>
+          </div>
+        </div>
+      </aside>
+
+      <main className="chat-area">
+        <div className="messages">
+          {messages.map((m) => (
+            <div key={m.id} className={`message message-${m.role}`}>
+              <div className="bubble">{m.text}</div>
             </div>
-            <figcaption>
-              <strong>{title}</strong>
-              <br />
-              <small>/{key}.</small>{ext}
-            </figcaption>
-          </figure>
-        ))}
+          ))}
+
+          {messages.length === 1 && selectedPart === null && (
+            <div className="answer-section">
+              <p className="answer-prompt">버튼으로 고르거나, 글로 답할 수도 있어요.</p>
+              <div className="part-grid">
+                {bodyParts.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`part-btn ${selectedPart === p.id ? 'selected' : ''}`}
+                    onClick={() => selectPart(p.id, p.label)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="input-area">
+          <textarea
+            className="chat-input"
+            placeholder="글로 답할 수도 있어요"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                sendText()
+              }
+            }}
+          />
+          <div className="attach-row">
+            <label className="attach-btn">
+              <span className="attach-icon" aria-hidden="true" />
+              사진
+              <input type="file" accept="image/*" className="attach-input" />
+            </label>
+            <button type="button" className="send-btn" onClick={sendText}>보내기</button>
+          </div>
+        </div>
       </main>
 
-      <footer className="sample-footer">
-        <h2>참고</h2>
-        <ul>
-          <li>
-            <code>public/</code> 아래에 로고 파일을 넣으면 빌드 결과에도 그대로 포함된다.
-          </li>
-          <li>SVG는 <code>&lt;img&gt;</code>로도 쓸 수 있고, 추후 인라인으로 넣어도 된다.</li>
-          <li>실제 앱에서는 <code>src/assets/</code>에 넣고 Vite가 해시한 경로를 쓰는 방법도 있다.</li>
-        </ul>
-      </footer>
+      {toast && <div className="toast" role="status" aria-live="polite">{toast}</div>}
     </div>
   )
 }
