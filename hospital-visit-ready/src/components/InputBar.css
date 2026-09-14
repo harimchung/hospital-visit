@@ -1,0 +1,150 @@
+/* ---------------------------------------------------------------
+   C7 InputBar
+   design.md 4장 컴포넌트 규격
+   --------------------------------------------------------------- */
+
+.c-inputbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 56px;
+  padding: 0 var(--sp-3) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  background: var(--c-surface);
+  border-top: 1px solid var(--c-border);
+}
+
+.c-inputbar__left {
+  flex-shrink: 0;
+}
+
+.c-inputbar__camera-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-input);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.c-inputbar__camera-btn:hover {
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+  background: var(--c-primary-tint);
+}
+
+.c-inputbar__camera-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-primary);
+}
+
+.c-inputbar__camera-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--c-border);
+}
+
+.c-inputbar__input-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.c-inputbar__input {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-input);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh);
+  resize: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+  outline: none;
+}
+
+.c-inputbar__input::placeholder {
+  color: var(--c-text-3);
+}
+
+.c-inputbar__input:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 2px var(--c-primary-tint);
+}
+
+.c-inputbar__input:disabled {
+  background: var(--c-bg);
+  border-color: var(--c-border);
+  color: var(--c-text-3);
+  cursor: not-allowed;
+}
+
+.c-inputbar__input--pill {
+  height: 44px;
+  /* pill 모드에서 카메라 없음, placeholder 변경 */
+}
+
+.c-inputbar__right {
+  flex-shrink: 0;
+}
+
+.c-inputbar__send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition:
+    transform 80ms ease,
+    background-color 120ms ease;
+}
+
+.c-inputbar__send-btn:hover:not(:disabled) {
+  background: var(--c-primary-hover);
+}
+
+.c-inputbar__send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.c-inputbar__send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.c-inputbar__send-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-primary);
+}
+
+.c-inputbar--disabled .c-inputbar__camera-btn,
+.c-inputbar--disabled .c-inputbar__input,
+.c-inputbar--disabled .c-inputbar__send-btn {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------
+   S6 모드 (약 찾기 패널) — 카메라 없음, placeholder 변경
+   --------------------------------------------------------------- */
+
+.c-inputbar--pill-mode .c-inputbar__camera-btn {
+  display: none;
+}

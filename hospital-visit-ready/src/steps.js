@@ -1,5 +1,5 @@
 // 단계 정의
-export const STEPS = {
+const STEPS = {
   WHERE: 'where',
   PHOTO: 'photo',
   HOW: 'how',

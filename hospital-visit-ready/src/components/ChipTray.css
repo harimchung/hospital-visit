@@ -1,0 +1,77 @@
+/* ---------------------------------------------------------------
+   C6 ChipTray — 칩 목록
+   design.md 4장 컴포넌트 규격 + 체크리스트 9번
+   --------------------------------------------------------------- */
+
+.chip-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  height: 36px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--c-primary);
+  border-radius: var(--r-chip);
+  background: var(--c-surface);
+  color: var(--c-primary);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: var(--lh);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    transform 80ms ease;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+}
+
+.chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chip:not(:disabled) {
+  touch-action: manipulation;
+}
+
+.chip:not(:disabled):hover {
+  background: var(--c-primary-tint);
+}
+
+.chip:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* 선택된 칩 — 배경 + 체크 아이콘 (색만으로 구분 금지) */
+.chip[aria-pressed="true"] {
+  background: var(--c-primary-tint);
+}
+
+.chip-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.chip[aria-pressed="true"] .chip-check {
+  background: var(--c-primary);
+}

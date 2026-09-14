@@ -1,0 +1,257 @@
+/* ---------------------------------------------------------------
+   C8 Card
+   design.md 4장 컴포넌트 규격
+   --------------------------------------------------------------- */
+
+.c-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-bubble);
+  padding: var(--sp-4);
+  box-shadow: var(--shadow-card);
+}
+
+.c-card--danger {
+  background: var(--c-danger-bg);
+  border: 2px solid var(--c-danger-border);
+  box-shadow: var(--shadow-card);
+}
+
+/* 카드 섹션 제목 — 15/600 */
+.c-card__section-title {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh);
+  color: var(--c-text);
+  margin: 0;
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--c-border);
+  margin-bottom: var(--sp-3);
+}
+
+.c-card__section:last-of-type .c-card__section-title {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+/* 위험 카드 전용 제목 — 24/700 --c-danger */
+.c-card__danger-title {
+  font-family: var(--font);
+  font-size: var(--fs-h1);
+  font-weight: 700;
+  line-height: var(--lh);
+  color: var(--c-danger);
+  margin: 0 0 var(--sp-2);
+}
+
+/* 카드 본문 텍스트 */
+.c-card__body {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh);
+  color: var(--c-text);
+  margin: 0;
+}
+
+/* 힌트 (12px) */
+.c-card__hint {
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+  margin-top: var(--sp-1);
+  margin-bottom: 0;
+}
+
+/* 진료 후 메모 textarea */
+.c-card__textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-input);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh);
+  resize: vertical;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+  outline: none;
+}
+
+.c-card__textarea::placeholder {
+  color: var(--c-text-3);
+}
+
+.c-card__textarea:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 2px var(--c-primary-tint);
+}
+
+/* 카드 내 버튼 행 */
+.c-card__actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/* 대본 리스트 스타일 */
+.c-card__script-list {
+  list-style: none;
+  margin: var(--sp-2) 0;
+  padding: 0;
+  padding-left: var(--sp-4);
+}
+
+.c-card__script-list li {
+  position: relative;
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh);
+  color: var(--c-text);
+  margin-bottom: var(--sp-1);
+  padding-left: var(--sp-3);
+}
+
+.c-card__script-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--c-primary);
+  font-weight: 700;
+}
+
+.c-card__script-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* 질문 번호 목록 스타일 */
+.c-card__questions-list {
+  list-style: none;
+  margin: var(--sp-2) 0;
+  padding: 0;
+}
+
+.c-card__questions-list li {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  margin-bottom: var(--sp-2);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh);
+  color: var(--c-text);
+}
+
+.c-card__questions-list li:last-child {
+  margin-bottom: 0;
+}
+
+.c-card__question-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+
+.c-card__question-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 사진 가로 나열 (S8) */
+.c-card__photo-list {
+  display: flex;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0 0;
+  flex-wrap: wrap;
+}
+
+.c-card__photo-item {
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+  background: var(--c-photo-skin);
+}
+
+.c-card__photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.c-card__photo-caption {
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+  margin-top: var(--sp-1);
+}
+
+/* 진료과 순위 — 번호 원 (1위만 --c-primary 채움, 2·3위 테두리) */
+.c-card__dept-rank {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  margin-bottom: var(--sp-2);
+}
+
+.c-card__dept-rank:last-child {
+  margin-bottom: 0;
+}
+
+.c-card__dept-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+}
+
+.c-card__dept-rank--2 .c-card__dept-num,
+.c-card__dept-rank--3 .c-card__dept-num {
+  background: transparent;
+  border: 2px solid var(--c-primary);
+  color: var(--c-primary);
+}
+
+.c-card__dept-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.c-card__dept-name {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh);
+  color: var(--c-text);
+  margin-bottom: 2px;
+}
+
+.c-card__dept-reason {
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+  margin: 0;
+}

@@ -1,0 +1,72 @@
+/* ---------------------------------------------------------------
+   C6 Button — 3종 (Primary / Secondary / Danger)
+   design.md 4장 버튼 3종 규격
+   --------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 80ms ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* Primary — 배경 --c-primary, 흰 글자 */
+.btn-primary {
+  background: var(--c-primary);
+  color: #fff;
+  border-color: var(--c-primary);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: var(--c-primary-hover);
+  border-color: var(--c-primary-hover);
+}
+
+/* Secondary — 배경 투명, 1px --c-primary, 글자 --c-primary */
+.btn-secondary {
+  background: transparent;
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.btn-secondary:not(:disabled):hover {
+  background: var(--c-primary-tint);
+}
+
+/* Danger — 배경 --c-danger, 흰 글자 */
+.btn-danger {
+  background: var(--c-danger);
+  color: #fff;
+  border-color: var(--c-danger);
+}
+
+.btn-danger:not(:disabled):hover {
+  background: #b02824;
+  border-color: #b02824;
+}

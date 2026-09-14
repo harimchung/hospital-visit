@@ -1,0 +1,80 @@
+/* ================================================================
+   디자인 토큰 — design.md 2장 기반
+   프로젝트 전반의 색·글자·간격·모서리·그림자·모션 정의.
+   모든 컴포넌트는 이 토큰을 참조한다.
+   ================================================================ */
+
+/* ---------- 색 — 2.1 ---------- */
+
+:root {
+  /* brand — 2.1.1 */
+  --c-primary:        #17232B;
+  --c-primary-hover:  #24343F;
+  --c-primary-soft:   #3D4F5B;
+  --c-primary-tint:   #E9EEF1;
+
+  /* neutral — 2.1.2 */
+  --c-bg:             #F4F6F8;
+  --c-surface:        #FFFFFF;
+  --c-border:         #D9E0E5;
+  --c-border-strong:  #B8C3CB;
+  --c-text:           #17232B;
+  --c-text-2:         #5B6B75;
+  --c-text-3:         #8A98A2;
+
+  /* semantic — 2.1.3 */
+  --c-danger:         #C4342D;
+  --c-danger-bg:      #FBECEA;
+  --c-danger-border:  #E8A29D;
+  --c-success:        #2E7D5B;
+  --c-photo-skin:     #F2C6B8;
+
+  /* 타이포 — 2.2 */
+  --font: "Pretendard Variable", Pretendard, -apple-system,
+         "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --fs-title: 17px;
+  --fs-body:  15px;
+  --fs-hint:  12px;
+  --fs-h1:    24px;
+  --lh: 1.5;
+
+  /* 간격/모서리/그림자 — 2.3 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --r-bubble: 12px;
+  --r-chip:   999px;
+  --r-input:  12px;
+  --r-btn:    999px;
+  --shadow-card: 0 1px 2px rgba(23, 35, 43, 0.06);
+  --tap-min: 44px;
+}
+
+/* 다크 모드 미지원 (체크리스트 9번) */
+html {
+  color-scheme: light;
+}
+
+/* ---------- 전역 박스 모델 ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ---------- 모션 — 2.4 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}

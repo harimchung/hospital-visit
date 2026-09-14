@@ -1,0 +1,119 @@
+/* ---------------------------------------------------------------
+   C1 AppBar — 높이 56
+   design.md 4장 컴포넌트 규격 + public 로고 포함
+   --------------------------------------------------------------- */
+
+.appbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 var(--sp-3);
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  z-index: 10;
+}
+
+/* --- 좌측: 햄버거 24px --- */
+.appbar-hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.appbar-hamburger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-primary);
+  border-radius: var(--r-btn);
+}
+
+.hamburger-icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.hamburger-icon::before,
+.hamburger-icon::after,
+.hamburger-icon {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--c-text);
+  border-radius: 1px;
+}
+
+.hamburger-icon { top: 5px; }
+.hamburger-icon::before { top: 4px; }
+.hamburger-icon::after { top: 16px; }
+
+/* --- 중앙: 로고 + 제목 --- */
+.appbar-center {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.appbar-logo {
+  width: 96px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.appbar-title {
+  font-family: var(--font);
+  font-size: var(--fs-title);
+  font-weight: 600;
+  line-height: var(--lh);
+  color: var(--c-text);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- 우측: 프로필/닫기 버튼 --- */
+.appbar-right {
+  flex-shrink: 0;
+}
+
+.appbar-right-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--c-primary);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--c-primary);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: var(--lh);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.appbar-right-btn:hover {
+  background: var(--c-primary-tint);
+}
+
+.appbar-right-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-primary);
+}

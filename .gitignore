@@ -45,5 +45,8 @@ env/
 *.key
 credentials.json
 
+# Hermes MCP tokens (never commit)
+.hermes/mcp-tokens/
+
 # Logs
 *.log

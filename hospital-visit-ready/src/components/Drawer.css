@@ -1,0 +1,423 @@
+/* ---------------------------------------------------------------
+   C9 Drawer
+   design.md 4장 컴포넌트 규격 + 체크리스트 9번
+   --------------------------------------------------------------- */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 35, 43, 0.45);
+  z-index: 50;
+  animation: overlay-fade 200ms ease-out;
+}
+
+@keyframes overlay-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(72%, 400px);
+  max-width: 400px;
+  background: var(--c-surface);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  animation: drawer-slide 200ms ease-out;
+  box-shadow: 0 4px 24px rgba(23, 35, 43, 0.12);
+}
+
+@keyframes drawer-slide {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+/* --- 헤더 --- */
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
+}
+
+.drawer-header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-title {
+  font-family: var(--font);
+  font-size: var(--fs-title);
+  font-weight: 600;
+  line-height: var(--lh);
+  color: var(--c-text);
+  margin: 0;
+}
+
+.drawer-caption {
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+  margin: 0;
+}
+
+.drawer-close-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--c-text-2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.drawer-close-btn:hover {
+  background: var(--c-primary-tint);
+  color: var(--c-text);
+}
+
+.drawer-close-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-primary);
+  border-radius: var(--r-btn);
+}
+
+/* --- 본문 --- */
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-3) var(--sp-4);
+}
+
+/* 프로필 리스트 */
+.profile-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-btn);
+  margin-bottom: var(--sp-1);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+  transition:
+    background-color 120ms ease;
+}
+
+.profile-item:last-child {
+  margin-bottom: 0;
+}
+
+.profile-item:hover {
+  background: var(--c-primary-tint);
+}
+
+.profile-item.selected {
+  background: var(--c-primary);
+}
+
+.profile-item.selected .profile-name {
+  color: #fff;
+}
+
+.profile-name {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: var(--lh);
+  color: var(--c-text);
+}
+
+.profile-age {
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+  margin-left: var(--sp-1);
+}
+
+.profile-item.selected .profile-age {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* 지난 진료 리스트 */
+.drawer-section-title {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh);
+  color: var(--c-text);
+  margin: var(--sp-4) 0 var(--sp-2);
+}
+
+.visit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.visit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-btn);
+  margin-bottom: var(--sp-1);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+  transition:
+    background-color 120ms ease;
+}
+
+.visit-item:last-child {
+  margin-bottom: 0;
+}
+
+.visit-item:hover {
+  background: var(--c-primary-tint);
+}
+
+.visit-item-date {
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+}
+
+.visit-item-title {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh);
+  color: var(--c-text);
+}
+
+.visit-item-summary {
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+}
+
+/* 프로필 추가 버튼 (보조 — 1px --c-primary 테두리) */
+.profile-add-btn {
+  display: block;
+  width: 100%;
+  margin-top: var(--sp-3);
+  height: 44px;
+  border: 1px solid var(--c-primary);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--c-primary);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: var(--lh);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease;
+}
+
+.profile-add-btn:hover {
+  background: var(--c-primary-tint);
+}
+
+.profile-add-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-primary);
+}
+
+/* --- 푸터 --- */
+.drawer-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--c-border);
+  flex-shrink: 0;
+}
+
+.drawer-secondary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--c-primary);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--c-primary);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: var(--lh);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.drawer-secondary-btn:hover {
+  background: var(--c-primary-tint);
+}
+
+.drawer-secondary-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-primary);
+}
+
+.drawer-danger-btn {
+  display: block;
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--c-text-3);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: var(--lh);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.drawer-danger-btn:hover {
+  color: var(--c-danger);
+}
+
+.drawer-danger-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-danger);
+  border-radius: var(--r-btn);
+}
+
+/* --- 확인 시트 --- */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 35, 43, 0.45);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  animation: overlay-fade 200ms ease-out;
+}
+
+.confirm-sheet {
+  width: 100%;
+  max-width: 360px;
+  background: var(--c-surface);
+  border-radius: var(--r-bubble);
+  box-shadow: 0 8px 32px rgba(23, 35, 43, 0.18);
+  overflow: hidden;
+}
+
+.confirm-content {
+  padding: var(--sp-4);
+}
+
+.confirm-title {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh);
+  color: var(--c-text);
+  margin: 0 0 var(--sp-2);
+}
+
+.confirm-body {
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+  margin: 0 0 var(--sp-4);
+}
+
+.confirm-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.confirm-secondary {
+  flex: 1;
+  height: 44px;
+  border: 1px solid var(--c-primary);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--c-primary);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: var(--lh);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease;
+}
+
+.confirm-secondary:hover {
+  background: var(--c-primary-tint);
+}
+
+.confirm-secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-primary);
+}
+
+.confirm-danger {
+  flex: 1;
+  height: 44px;
+  border: none;
+  border-radius: var(--r-btn);
+  background: var(--c-danger);
+  color: #fff;
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease;
+}
+
+.confirm-danger:hover {
+  background: #b02824;
+}
+
+.confirm-danger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-danger);
+}
