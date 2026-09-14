@@ -41,9 +41,8 @@ export default function ChipTray({ chips = [], onSelect, selectedId, onEscape })
               className="chip"
               aria-pressed={isSelected}
               onClick={(e) => handleSelect(chip, e)}
-              title={isLast ? '해당 단계 건너뛰기 또는 다음 단계로 이동' : undefined}
             >
-              {isLast && (
+              {isSelected && (
                 <span className="chip-check" aria-hidden="true">
                   ✓
                 </span>

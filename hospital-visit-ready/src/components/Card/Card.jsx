@@ -1,5 +1,5 @@
 import './Card.css'
-import { t } from '../copy'
+import { t } from '../../copy'
 
 /**
  * C8 Card
@@ -14,8 +14,10 @@ import { t } from '../copy'
  *   children : 카드 내용
  */
 export default function Card({ variant = 'default', children }) {
-  const className = variant === 'danger' ? 'c-card c-card--danger' : 'c-card'
-  return <div className={className}>{children}</div>
+  const className = variant === 'danger'
+    ? 'c-card c-card--danger'
+    : 'c-card'
+  return <div className={className} role={variant === 'danger' ? 'alert' : undefined}>{children}</div>
 }
 
 /* --- Card.Danger 전용 (S9 응급) --- */
@@ -24,6 +26,7 @@ Card.Danger = function DangerCard({
   body,
   note = '',
   cta,
+  ctaHref,
   onCta,
   children,
 }) {
@@ -32,7 +35,15 @@ Card.Danger = function DangerCard({
       <h2 className="c-card__danger-title">{title}</h2>
       <p className="c-card__body">{body}</p>
       {note && <p className="c-card__hint">{note}</p>}
-      {cta && onCta ? (
+      {cta && (ctaHref ? (
+        <a
+          href={ctaHref}
+          className="c-btn c-btn--primary c-btn--danger"
+          onClick={onCta}
+        >
+          {cta}
+        </a>
+      ) : (
         <button
           type="button"
           className="c-btn c-btn--primary c-btn--danger"
@@ -40,7 +51,7 @@ Card.Danger = function DangerCard({
         >
           {cta}
         </button>
-      ) : null}
+      ))}
       {children}
     </Card>
   )
@@ -108,6 +119,23 @@ Card.DeptRank = function DeptRank({ rank, dept, reason }) {
         <div className="c-card__dept-name">{dept}</div>
         <div className="c-card__dept-reason">{reason}</div>
       </div>
+    </div>
+  )
+}
+
+/* --- Card.DeptRankList (S8 진료과 순위 목록) --- */
+Card.DeptRankList = function DeptRankList({ depts }) {
+  if (!depts || depts.length === 0) return null
+  return (
+    <div className="c-card__dept-rank-list">
+      {depts.map((d, i) => (
+        <Card.DeptRank
+          key={d.name}
+          rank={i + 1}
+          dept={d.name}
+          reason={d.reason}
+        />
+      ))}
     </div>
   )
 }

@@ -1,56 +1,8 @@
 /* ================================================================
    Hospital Visit Ready — App.css
-   디자인 토큰 기준: design.md 2~4장
+   레이아웃과 전역 규칙만 담당. 컴포넌트 스타일은 각 컴포넌트 CSS에 있다.
+   디자인 토큰은 src/tokens.css에서 정의한다 (이 파일에는 반복하지 않는다).
    ================================================================ */
-
-:root {
-  /* --- 2.1.1 브랜드/메인 색 --- */
-  --c-primary:        #17232B;
-  --c-primary-hover:  #24343F;
-  --c-primary-soft:   #3D4F5B;
-  --c-primary-tint:   #E9EEF1;
-
-  /* --- 2.1.2 뉴트럴 --- */
-  --c-bg:             #F4F6F8;
-  --c-surface:        #FFFFFF;
-  --c-border:         #D9E0E5;
-  --c-border-strong:  #B8C3CB;
-  --c-text:           #17232B;
-  --c-text-2:         #5B6B75;
-  --c-text-3:         #8A98A2;
-
-  /* --- 2.1.3 시맨틱 --- */
-  --c-danger:         #C4342D;
-  --c-danger-bg:      #FBECEA;
-  --c-danger-border:  #E8A29D;
-  --c-success:        #2E7D5B;
-  --c-photo-skin:     #F2C6B8;
-
-  /* --- 2.2 타이포 --- */
-  --font: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-  --fs-title:  17px;
-  --fs-body:   15px;
-  --fs-hint:   12px;
-  --fs-h1:     24px;
-  --lh: 1.5;
-
-  /* --- 2.3 간격, 모서리, 그림자 --- */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 20px;
-  --sp-6: 24px;
-  --r-bubble: 12px;
-  --r-chip:   999px;
-  --r-input:  12px;
-  --r-btn:    999px;
-  --shadow-card: 0 1px 2px rgba(23,35,43,.06);
-  --tap-min: 44px;
-
-  /* 기타 */
-  color-scheme: light;
-}
 
 /* ================================================================
    3. 레이아웃 프레임워크 — 셸
@@ -70,7 +22,7 @@ html, body {
 
 .app-shell {
   display: grid;
-  grid-template-rows: auto 1fr auto;   /* appbar / messages / tray+input */
+  grid-template-rows: auto 1fr auto;
   height: 100dvh;
   max-width: 480px;
   margin: 0 auto;
@@ -79,7 +31,16 @@ html, body {
 
 @media (min-width: 768px) {
   body { background: var(--c-bg); }
-  .app-shell { border-left: 1px solid var(--c-border); border-right: 1px solid var(--c-border); }
+  .app-shell {
+    border-left: 1px solid var(--c-border);
+    border-right: 1px solid var(--c-border);
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-shell { max-width: 640px; }
+  .c-card { max-width: 640px; }
 }
 
 /* 키보드 대응: visualViewport height 보정 */
@@ -90,113 +51,6 @@ html, body {
 }
 
 /* ================================================================
-   3.5 앱바 / 입력바 고정 — C1 AppBar
-   ================================================================ */
-
-.appbar {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  height: 56px;                       /* C1 */
-  padding: 0 var(--sp-3);
-  background: var(--c-surface);       /* C1 */
-  border-bottom: 1px solid var(--c-border);   /* C1 */
-  position: relative;
-  z-index: 20;
-}
-
-.appbar-left {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-shrink: 0;
-}
-
-.hamburger-btn {
-  width: 24px;      /* C1: 햄버거 24px */
-  height: 24px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hamburger-lines {
-  position: relative;
-  width: 16px;
-  height: 12px;
-}
-
-.hamburger-lines::before,
-.hamburger-lines::after,
-.hamburger-lines {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--c-primary);
-  border-radius: 2px;
-}
-
-.hamburger-lines { top: 5px; }
-.hamburger-lines::before { top: 3px; }
-.hamburger-lines::after  { top: 7px; }
-
-.appbar-title {
-  font-size: var(--fs-title);    /* 17px */
-  font-weight: 600;
-  color: var(--c-primary);
-  margin-left: var(--sp-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  text-align: left;
-}
-
-.appbar-right {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-shrink: 0;
-}
-
-/* 프로필 버튼 — C1 (보조 버튼 스타일) */
-.profile-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  height: 32px;
-  padding: 0 var(--sp-3);
-  border-radius: var(--r-btn);
-  border: 1px solid var(--c-primary);
-  background: transparent;
-  color: var(--c-primary);
-  font-size: var(--fs-body);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-/* 닫기 버튼 — 6번 화면(S6) */
-.close-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: var(--r-btn);
-  background: transparent;
-  color: var(--c-primary);
-  cursor: pointer;
-}
-
-/* ================================================================
    3.6 메시지 영역
    ================================================================ */
 
@@ -204,14 +58,13 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);          /* 말풍선 간격 */
+  gap: var(--sp-3);
   overflow-y: auto;
-  overflow-x: hidden;        /* 가로 스크롤 금지 (3.8) */
+  overflow-x: hidden;
   padding: var(--sp-3) var(--sp-3) 0;
   scroll-behavior: smooth;
 }
 
-/* 말풍선 컨테이너 */
 .message-row {
   display: flex;
   flex-direction: column;
@@ -229,534 +82,12 @@ html, body {
 }
 
 /* ================================================================
-   C2 AgentBubble
+   말풍선 등장 모션 (2.4) — 컴포넌트 CSS와 키프레임 공유
    ================================================================ */
-
-.agent-bubble {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-bubble);
-  padding: var(--sp-3) var(--sp-3)-5;  /* 12/14 → sp-3(12) / sp-3.5 */
-  max-width: 80%;
-  color: var(--c-text);
-  font-size: var(--fs-body);
-  line-height: var(--lh);
-  width: 100%;
-  box-sizing: border-box;
-  animation: bubble-in 160ms ease-out both;
-}
-
-.agent-bubble p {
-  margin: 0;
-}
-
-.agent-bubble p + p {
-  margin-top: var(--sp-1);
-}
 
 @keyframes bubble-in {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ================================================================
-   C3 Hint
-   ================================================================ */
-
-.hint {
-  margin-top: var(--sp-1);          /* 4px 간격 → sp-1 */
-  padding-left: var(--sp-1);        /* 좌측 4px 들여쓰기 */
-  font-size: var(--fs-hint);        /* 12px */
-  color: var(--c-text-2);
-  line-height: 1.4;
-}
-
-/* ================================================================
-   C4 UserBubble
-   ================================================================ */
-
-.user-bubble {
-  background: var(--c-primary);
-  color: #FFFFFF;
-  border-radius: var(--r-bubble);
-  padding: var(--sp-3) var(--sp-3)-5;
-  max-width: 80%;
-  width: 100%;
-  box-sizing: border-box;
-  animation: bubble-in 160ms ease-out both;
-}
-
-.user-bubble p {
-  margin: 0;
-  font-size: var(--fs-body);
-  line-height: var(--lh);
-}
-
-.user-bubble .photo-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-}
-
-.user-bubble .photo-thumb {
-  width: 96px;      /* C5: 96×96 */
-  height: 96px;
-  border-radius: 8px;     /* C5: 썸네일 8px 라운드 */
-  background: var(--c-photo-skin);
-  background-size: cover;
-  background-position: center;
-  flex-shrink: 0;
-}
-
-.user-bubble .photo-caption {
-  font-size: var(--fs-hint);
-  color: rgba(255,255,255,.85);
-  line-height: 1.3;
-}
-
-/* ================================================================
-   C6 ChipTray
-   ================================================================ */
-
-/* 칩 트레이 컨테이너 — 부록: message-row 안 맨 아래 */
-.chip-tray {
-  display: flex;
-  flex-wrap: wrap;          /* 3.7, 3.8 */
-  gap: var(--sp-2);         /* 8px 간격 */
-  margin-top: var(--sp-3);
-  padding: 0 var(--sp-1);   /* 좌측 정렬 미세 조정 */
-  list-style: none;
-  margin: var(--sp-3) var(--sp-1) 0;
-  padding: 0;
-}
-
-.chip-tray[role="group"] {
-  /* 접근성: role="group" aria-label="답 고르기" */
-}
-
-/* 개별 칩 — C6 */
-.chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;             /* C6: 높이 36 */
-  padding: 0 var(--sp-3)-5;  /* 14px → sp-3.5 */
-  border-radius: var(--r-chip);    /* 999px */
-  border: 1px solid var(--c-primary);
-  background: var(--c-surface);
-  color: var(--c-primary);
-  font-size: 14px;          /* C6: 14/500 → fs-body보다 작고 medium */
-  font-weight: 500;
-  font-family: var(--font);
-  cursor: pointer;
-  line-height: 1;
-  flex: 0 0 auto;
-  transition: background 120ms ease, color 120ms ease;
-
-  /* 터치 영역 확보: 36px 높이 + 상하 4px 마진 = 44px (9.1) */
-  margin-top: 4px;
-  margin-bottom: 4px;
-}
-
-.chip:hover {
-  background: var(--c-primary-tint);
-}
-
-.chip:active {
-  background: var(--c-primary);
-  color: #fff;
-}
-
-.chip.selected,
-.chip[aria-pressed="true"] {
-  background: var(--c-primary-tint);
-  /* 체크 아이콘 (9.1: 색만으로 구분 안 함) */
-}
-
-.chip .chip-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  margin-right: 4px;
-  border-radius: 50%;
-  background: var(--c-primary);
-  color: #fff;
-  font-size: 10px;
-  line-height: 1;
-}
-
-/* 탈출구 칩 강조 (마지막 칩) */
-.chip-escape {
-  border-style: dashed;
-}
-
-/* ================================================================
-   C7 InputBar
-   ================================================================ */
-
-.input-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-3) calc(var(--sp-3) + env(safe-area-inset-bottom));  /* 3.5 safe-area */
-  background: var(--c-surface);
-  border-top: 1px solid var(--c-border);
-  position: relative;
-  z-index: 10;
-}
-
-.input-bar.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-/* 카메라 버튼 — C7: 44×44, 1px 테두리, 12px 라운드 */
-.camera-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-input);
-  background: var(--c-surface);
-  color: var(--c-text-2);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 120ms ease, color 120ms ease;
-}
-
-.camera-btn:hover {
-  background: var(--c-bg);
-  color: var(--c-primary);
-}
-
-.camera-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-/* 입력창 — C7: 44 높이, 12px 라운드 */
-.input-field {
-  flex: 1;
-  min-width: 0;
-  height: 44px;
-  padding: 0 var(--sp-3);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-input);
-  background: var(--c-bg);
-  color: var(--c-text);
-  font-size: var(--fs-body);
-  font-family: var(--font);
-  line-height: var(--lh);
-  outline: none;
-  box-sizing: border-box;
-  resize: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
-}
-
-.input-field::placeholder {
-  color: var(--c-text-3);
-}
-
-.input-field:focus {
-  border-color: var(--c-primary);
-  box-shadow: 0 0 0 3px var(--c-primary-tint);
-}
-
-/* 보내기 버튼 — C7: 44×44 원형, --c-primary, 흰 화살표 */
-.send-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: none;
-  background: var(--c-primary);
-  color: #fff;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 120ms ease, transform 120ms ease;
-}
-
-.send-btn:hover {
-  background: var(--c-primary-hover);
-}
-
-.send-btn:active {
-  transform: scale(0.95);
-}
-
-.send-btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.send-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* ================================================================
-   C8 Card
-   ================================================================ */
-
-.card {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-bubble);
-  padding: var(--sp-4);     /* 16px */
-  box-shadow: var(--shadow-card);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.card-danger {
-  border: 2px solid var(--c-danger-border);
-  background: var(--c-danger-bg);
-}
-
-.card-section-title {
-  font-size: var(--fs-body);
-  font-weight: 600;
-  color: var(--c-text);
-  margin: 0 0 var(--sp-2);
-}
-
-.card-text {
-  font-size: var(--fs-body);
-  color: var(--c-text);
-  line-height: var(--lh);
-  margin: 0 0 var(--sp-2);
-}
-
-.card-hint {
-  font-size: var(--fs-hint);
-  color: var(--c-text-2);
-  line-height: 1.4;
-  margin: 0;
-}
-
-.card-emergency-title {
-  font-size: var(--fs-h1);
-  font-weight: 700;
-  color: var(--c-danger);
-  margin: 0 0 var(--sp-2);
-}
-
-/* ================================================================
-   C9 Drawer
-   ================================================================ */
-
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(23,35,43,.45);   /* 28% 스크림 */
-  z-index: 50;
-  animation: overlay-in 200ms ease-out both;
-}
-
-.drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 72%;
-  max-width: 480px;
-  background: var(--c-surface);
-  z-index: 51;
-  overflow-y: auto;
-  animation: drawer-in 200ms ease-out both;
-}
-
-@keyframes overlay-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes drawer-in {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
-}
-
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-4) var(--sp-4) 0;
-  border-bottom: 1px solid var(--c-border);
-}
-
-.drawer-title {
-  font-size: var(--fs-title);
-  font-weight: 600;
-  color: var(--c-primary);
-}
-
-.drawer-caption {
-  font-size: var(--fs-hint);
-  color: var(--c-text-2);
-  margin-top: var(--sp-1);
-}
-
-.drawer-close {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: var(--r-btn);
-  background: transparent;
-  color: var(--c-text-2);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.drawer-close:hover {
-  background: var(--c-bg);
-  color: var(--c-text);
-}
-
-.drawer-content {
-  padding: var(--sp-3) var(--sp-4);
-}
-
-/* 프로필 리스트 */
-.profile-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 var(--sp-4);
-}
-
-.profile-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-3);
-  border-radius: var(--r-bubble);
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.profile-item:hover {
-  background: var(--c-bg);
-}
-
-.profile-item.selected {
-  background: var(--c-primary);
-  color: #fff;
-}
-
-.profile-item-name {
-  font-size: var(--fs-body);
-  font-weight: 500;
-}
-
-.profile-item-age {
-  font-size: var(--fs-hint);
-  color: inherit;
-  opacity: 0.8;
-}
-
-.profile-add-btn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: var(--sp-2) var(--sp-3);
-  margin-top: var(--sp-2);
-  border: 1px solid var(--c-primary);
-  border-radius: var(--r-btn);
-  background: transparent;
-  color: var(--c-primary);
-  font-size: var(--fs-body);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.profile-add-btn:hover {
-  background: var(--c-primary-tint);
-}
-
-/* 지난 진료 리스트 */
-.visit-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.visit-item {
-  display: flex;
-  flex-direction: column;
-  padding: var(--sp-2) var(--sp-3);
-  border-bottom: 1px solid var(--c-border);
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.visit-item:hover {
-  background: var(--c-bg);
-}
-
-.visit-item-date {
-  font-size: var(--fs-hint);
-  color: var(--c-text-2);
-}
-
-.visit-item-title {
-  font-size: var(--fs-body);
-  font-weight: 600;
-  color: var(--c-text);
-  margin: var(--sp-1) 0;
-}
-
-.visit-item-summary {
-  font-size: var(--fs-hint);
-  color: var(--c-text-2);
-}
-
-/* 드로어 하단 버튼 */
-.drawer-footer {
-  padding: var(--sp-3) var(--sp-4);
-  border-top: 1px solid var(--c-border);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.drawer-secondary-btn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--c-primary);
-  border-radius: var(--r-btn);
-  background: transparent;
-  color: var(--c-primary);
-  font-size: var(--fs-body);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.drawer-danger-btn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: var(--sp-2) var(--sp-3);
-  border: none;
-  border-radius: var(--r-btn);
-  background: transparent;
-  color: var(--c-text-3);
-  font-size: var(--fs-body);
-  cursor: pointer;
-}
-
-.drawer-danger-btn:hover {
-  color: var(--c-danger);
 }
 
 /* ================================================================
@@ -789,34 +120,8 @@ html, body {
 }
 
 /* ================================================================
-   119 응급 카드 — S9 / C8 위험 변형
+   119 응급 CTA / 신호 태그 (S9) — 카드 내부 커스텀 엘리먼트용
    ================================================================ */
-
-.emergency-card {
-  background: var(--c-surface);
-  border: 2px solid var(--c-danger-border);
-  background: var(--c-danger-bg);
-  border-radius: var(--r-bubble);
-  padding: var(--sp-4);
-  box-shadow: var(--shadow-card);
-  width: 100%;
-  box-sizing: border-box;
-  animation: none;  /* 응급: 애니메이션 없음 */
-}
-
-.emergency-title {
-  font-size: var(--fs-h1);
-  font-weight: 700;
-  color: var(--c-danger);
-  margin: 0 0 var(--sp-2);
-}
-
-.emergency-body {
-  font-size: var(--fs-body);
-  color: var(--c-text);
-  line-height: var(--lh);
-  margin: 0 0 var(--sp-3);
-}
 
 .emergency-cta {
   display: inline-flex;
@@ -840,13 +145,6 @@ html, body {
   background: #a32a24;
 }
 
-.emergency-note {
-  font-size: var(--fs-hint);
-  color: var(--c-text-2);
-  margin: 0;
-  line-height: 1.4;
-}
-
 .emergency-signal-list {
   display: flex;
   flex-wrap: wrap;
@@ -863,133 +161,18 @@ html, body {
 }
 
 /* ================================================================
-   결과 카드 섹션 스타일 (S8)
+   결과 카드 내부 서브 요소 중 컴포넌트 CSS와 겹치지 않는 것만
+   (카드 섹션 제목, 사진 캡션 오버레이 등 필요분)
    ================================================================ */
 
-.dept-rank-list {
-  display: flex;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
-}
-
-.dept-rank {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-btn);
-  min-width: 0;
-}
-
-.dept-rank-1 { background: var(--c-primary); color: #fff; }
-.dept-rank-2,
-.dept-rank-3 { border: 1px solid var(--c-border-strong); color: var(--c-text); }
-
-.dept-rank-num {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--fs-hint);
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.dept-rank-name {
+.card-section-title {
   font-size: var(--fs-body);
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dept-rank-reason {
-  font-size: var(--fs-hint);
-  color: var(--c-text-2);
-  margin-top: var(--sp-1);
-}
-
-.script-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 var(--sp-3);
-}
-
-.script-item {
-  position: relative;
-  padding-left: var(--sp-5);
-  margin-bottom: var(--sp-2);
-  font-size: var(--fs-body);
   color: var(--c-text);
-  line-height: var(--lh);
+  margin: 0 0 var(--sp-2);
 }
 
-.script-item::before {
-  content: "•";
-  position: absolute;
-  left: 0;
-  color: var(--c-primary);
-  font-weight: 700;
-}
-
-.questions-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 var(--sp-3);
-}
-
-.question-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-2);
-  padding: var(--sp-2) 0;
-  border-bottom: 1px solid var(--c-border);
-}
-
-.question-item:last-child {
-  border-bottom: none;
-}
-
-.question-num {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--c-primary);
-  color: #fff;
-  font-size: var(--fs-hint);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.question-text {
-  font-size: var(--fs-body);
-  color: var(--c-text);
-  line-height: var(--lh);
-}
-
-.photo-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  margin: var(--sp-3) 0;
-}
-
-.photo-item {
-  width: 96px;
-  height: 96px;
-  border-radius: 8px;
-  background: var(--c-photo-skin);
-  background-size: cover;
-  background-position: center;
-  position: relative;
-}
-
-.photo-caption {
+.photo-caption-overlay {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -1002,168 +185,13 @@ html, body {
   border-radius: 0 0 8px 8px;
 }
 
-.card-actions {
-  display: flex;
-  gap: var(--sp-2);
-  margin: var(--sp-3) 0;
-}
-
-.card-action-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 44px;
-  padding: 0 var(--sp-4);
-  border-radius: var(--r-btn);
-  border: none;
-  background: var(--c-primary);
-  color: #fff;
-  font-size: var(--fs-body);
-  font-weight: 600;
-  font-family: var(--font);
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.card-action-primary:hover {
-  background: var(--c-primary-hover);
-}
-
-.card-action-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 44px;
-  padding: 0 var(--sp-4);
-  border-radius: var(--r-btn);
-  border: 1px solid var(--c-primary);
-  background: transparent;
-  color: var(--c-primary);
-  font-size: var(--fs-body);
-  font-weight: 500;
-  font-family: var(--font);
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.card-action-secondary:hover {
-  background: var(--c-primary-tint);
-}
-
-.post-note-field {
-  width: 100%;
-  min-height: 80px;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-input);
-  background: var(--c-bg);
-  color: var(--c-text);
-  font-size: var(--fs-body);
-  font-family: var(--font);
-  line-height: var(--lh);
-  resize: vertical;
-  box-sizing: border-box;
-  outline: none;
-  transition: border-color 120ms ease;
-}
-
-.post-note-field::placeholder {
-  color: var(--c-text-3);
-}
-
-.post-note-field:focus {
-  border-color: var(--c-primary);
-  box-shadow: 0 0 0 3px var(--c-primary-tint);
-}
-
-/* ================================================================
-   모달/확인 시트
-   ================================================================ */
-
-.confirm-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(23,35,43,.5);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sp-4);
-  animation: overlay-in 160ms ease-out both;
-}
-
-.confirm-sheet {
-  background: var(--c-surface);
-  border-radius: var(--r-bubble);
-  padding: var(--sp-4);
-  width: 100%;
-  max-width: 320px;
-  box-shadow: var(--shadow-card);
-  animation: bubble-in 160ms ease-out both;
-}
-
-.confirm-title {
-  font-size: var(--fs-title);
-  font-weight: 600;
-  color: var(--c-text);
-  margin: 0 0 var(--sp-2);
-}
-
-.confirm-body {
-  font-size: var(--fs-body);
-  color: var(--c-text-2);
-  line-height: var(--lh);
-  margin: 0 0 var(--sp-3);
-}
-
-.confirm-actions {
-  display: flex;
-  gap: var(--sp-2);
-}
-
-.confirm-danger {
-  flex: 1;
-  height: 44px;
-  border-radius: var(--r-btn);
-  border: none;
-  background: var(--c-danger);
-  color: #fff;
-  font-size: var(--fs-body);
-  font-weight: 600;
-  font-family: var(--font);
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.confirm-danger:hover {
-  background: #a32a24;
-}
-
-.confirm-secondary {
-  flex: 1;
-  height: 44px;
-  border-radius: var(--r-btn);
-  border: 1px solid var(--c-border);
-  background: transparent;
-  color: var(--c-text);
-  font-size: var(--fs-body);
-  font-weight: 500;
-  font-family: var(--font);
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.confirm-secondary:hover {
-  background: var(--c-bg);
-}
-
 /* ================================================================
    @media print (9.1)
    ================================================================ */
 
 @media print {
   .appbar,
-  .input-bar,
+  .c-inputbar,
   .drawer-overlay,
   .drawer,
   .confirm-overlay,
@@ -1184,7 +212,7 @@ html, body {
   }
 
   .card,
-  .emergency-card {
+  .c-card {
     box-shadow: none;
     border: 1px solid #ccc;
   }

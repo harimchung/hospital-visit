@@ -1,8 +1,7 @@
 import './InputBar.css'
-import Button from './Button'
+import Button from '../Button/Button'
 
-/**
- * C7 InputBar
+/**C7 InputBar
  * design.md 4장 컴포넌트 규격
  *
  *   - 좌: 카메라 아이콘 버튼 44×44 1px 테두리 12px 라운드
@@ -20,6 +19,7 @@ import Button from './Button'
  *   hasCamera      : 카메라 버튼 표시 여부 (S6에서 false)
  *   disabled       : 비활성 (S9 응급)
  *   pillMode       : pill 모드 (placeholder="약 이름을 알면 여기에")
+ *   onCameraClick  : 카메라 버튼 클릭 시 호출 (파일 입력 트리거)
  */
 export default function InputBar({
   value = '',
@@ -29,6 +29,7 @@ export default function InputBar({
   hasCamera = true,
   disabled = false,
   pillMode = false,
+  onCameraClick,
 }) {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -52,8 +53,7 @@ export default function InputBar({
             type="button"
             className="c-inputbar__camera-btn"
             onClick={() => {
-              // 실제 구현에서는 file input 트리거
-              // design.md: 카메라 버튼(입력바)은 어느 단계에서든 같은 동작
+              onCameraClick?.()
             }}
             aria-label="사진 찍기"
             disabled={disabled}
@@ -71,7 +71,7 @@ export default function InputBar({
             >
               <path d="M3 7v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2" />
               <path d="M3 7l9 6 9-6" />
-              <circle cx="12" cy="12" r="2.5" />
+              <circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.75" />
             </svg>
           </button>
         </div>

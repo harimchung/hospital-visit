@@ -1,6 +1,6 @@
 import './Drawer.css'
-import Button from './Button'
-import { t } from '../copy'
+import Button from '../Button/Button'
+import { t } from '../../copy'
 
 /**
  * C9 Drawer

@@ -255,3 +255,11 @@
   color: var(--c-text-2);
   margin: 0;
 }
+
+/* 진료과 순위 목록 */
+.c-card__dept-rank-list {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  flex-wrap: wrap;
+}

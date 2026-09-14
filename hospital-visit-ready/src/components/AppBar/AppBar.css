@@ -51,9 +51,9 @@
   border-radius: 1px;
 }
 
-.hamburger-icon { top: 5px; }
+.hamburger-icon { top: 11px; }
 .hamburger-icon::before { top: 4px; }
-.hamburger-icon::after { top: 16px; }
+.hamburger-icon::after { top: 18px; }
 
 /* --- 중앙: 로고 + 제목 --- */
 .appbar-center {

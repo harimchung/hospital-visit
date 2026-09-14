@@ -18,7 +18,7 @@
   justify-content: center;
   gap: var(--sp-1);
   height: 36px;
-  padding: 0 var(--sp-3);
+  padding: 0 var(--sp-chip);
   border: 1px solid var(--c-primary);
   border-radius: var(--r-chip);
   background: var(--c-surface);

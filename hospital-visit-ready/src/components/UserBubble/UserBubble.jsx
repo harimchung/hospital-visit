@@ -1,5 +1,5 @@
 import './UserBubble.css'
-import PhotoBubble from './PhotoBubble'
+import PhotoBubble from '../PhotoBubble/PhotoBubble'
 
 /**
  * C4 UserBubble
