@@ -1,23 +1,8 @@
 {
-  "name": "hospital-visit-ready",
+  "name": "hospital-visit",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "npx vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "vite": "^8.3.0",
-    "@vitejs/plugin-react": "^6.1.1"
-  },
-  "devDependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "oxlint": "^1.81.0"
+    "ci-install": "cd hospital-visit-ready && npm install",
+    "build": "cd hospital-visit-ready && npm run build"
   }
 }

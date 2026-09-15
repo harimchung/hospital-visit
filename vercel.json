@@ -1,8 +1,8 @@
 {
   "framework": "vite",
+  "installCommand": "npm run ci-install",
   "buildCommand": "npm run build",
-  "installCommand": "npm install",
-  "outputDirectory": "dist",
+  "outputDirectory": "hospital-visit-ready/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

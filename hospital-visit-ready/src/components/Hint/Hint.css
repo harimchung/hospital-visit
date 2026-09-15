@@ -1,0 +1,14 @@
+/* ---------------------------------------------------------------
+   C3 Hint — AgentBubble 아래 4px, 좌측 4px 들여쓰기
+   design.md 4장 컴포넌트 규격
+   --------------------------------------------------------------- */
+
+.hint {
+  margin-top: var(--sp-1);
+  margin-bottom: 0;
+  padding-left: var(--sp-1);
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: var(--c-text-2);
+}

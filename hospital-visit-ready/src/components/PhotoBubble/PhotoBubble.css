@@ -1,0 +1,36 @@
+/* ---------------------------------------------------------------
+   C5 PhotoBubble — 96×96 썸네일 + 캡션
+   design.md 4장 컴포넌트 규격
+   --------------------------------------------------------------- */
+
+.photo-bubble {
+  display: flex;
+  flex-direction: column;
+  width: 96px;
+  flex-shrink: 0;
+}
+
+.photo-thumb {
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--c-photo-skin);
+  border: 1px solid var(--c-border);
+}
+
+.photo-caption {
+  margin-top: var(--sp-1);
+  font-family: var(--font);
+  font-size: var(--fs-hint);
+  line-height: var(--lh);
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* S8 등에서 배경이 밝은 맥락에 쓸 때 */
+.photo-bubble.inverted .photo-caption {
+  color: var(--c-text);
+}
