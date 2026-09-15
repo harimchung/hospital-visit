@@ -58,17 +58,22 @@ const I18N = {
   'input.placeholder.pill': '약 이름을 알면 여기에',
   'where.hint': '칩을 고르거나, 직접 말해도 돼요',
   'emergency.title': '지금 119',
-  'emergency.body': '{signal}이 {cond} 계속되는 건 바로 병원에 가야 하는 신호예요. 대본은 만들지 않아요.',
+  'emergency.body':
+    '{signal}이 {cond} 계속되는 건 바로 병원에 가야 하는 신호예요. 대본은 만들지 않아요.',
   'emergency.cta': '119 전화하기',
   'drawer.title': '진료 기록',
   'drawer.caption': '이 브라우저에만 저장, 암호화',
   'drawer.new': '+ 새 진료 준비',
   'drawer.clear': '기록 전부 지우기',
-  'drawer.clear.confirm': '이 브라우저의 프로필, 사진, 메모를 전부 지워요. 되돌릴 수 없어요.',
-  'questions.hint': '질문은 사용자가 쓰지 않아요. 답한 걸로 먼저 만들어 보여 줘요',
+  'drawer.clear.confirm':
+    '이 브라우저의 프로필, 사진, 메모를 전부 지워요. 되돌릴 수 없어요.',
+  'questions.hint':
+    '질문은 사용자가 쓰지 않아요. 답한 걸로 먼저 만들어 보여 줘요',
   'result.dept.note': '규칙표로 고른 거예요. 진단이 아니에요.',
-  'result.note.placeholder': '의사가 뭐라고 했는지 적어 두면 다음 대본에 들어가요',
-  'photo.ask': '사진 찍어 둘래요? 밤이랑 아침이 다르게 보일 때 나란히 비교할 수 있어요.',
+  'result.note.placeholder':
+    '의사가 뭐라고 했는지 적어 두면 다음 대본에 들어가요',
+  'photo.ask':
+    '사진 찍어 둘래요? 밤이랑 아침이 다르게 보일 때 나란히 비교할 수 있어요.',
   'photo.saved': '저장했어요. 이 브라우저에만 남고 서버로는 안 가요.',
 }
 function t(key, vars = {}) {
@@ -91,7 +96,7 @@ function App() {
     photos: [],
     result: null,
     emergency: null,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   })
 
   // 메시지 누적 배열 — 앱 화면의 실제 대화 기록
@@ -125,10 +130,7 @@ function App() {
     { id: 'multiple', label: '여러 군데', isEscape: true },
   ]
 
-  const showChips =
-    step === STEPS.WHERE &&
-    chipTrayVisible &&
-    !visit.emergency
+  const showChips = step === STEPS.WHERE && chipTrayVisible && !visit.emergency
 
   // 에이전트 말풍선을 기록에 추가
   const addAgent = useCallback((body, hint) => {
@@ -181,9 +183,7 @@ function App() {
       }
       // 매칭 실패 → 한 번 되묻기
       setInput('')
-      addAgent(
-        '어디 근처예요?', t('where.hint')
-      )
+      addAgent('어디 근처예요?', t('where.hint'))
       return
     }
 
@@ -197,7 +197,10 @@ function App() {
       [/귀|코|목|인후|편도|목이|코쪽|귀쪽|목쪽/, 'face_neck'],
       [/가슴|흉통|흉부|명치|심장|가슴쪽|가슴이/, 'chest'],
       [/배|복부|아랫배|윗배|배쪽|속이/, 'abdomen'],
-      [/허리|관절|무릎|어깨|손목|발목|허리쪽|관절쪽|팔|다리|허리/, 'back_joint'],
+      [
+        /허리|관절|무릎|어깨|손목|발목|허리쪽|관절쪽|팔|다리|허리/,
+        'back_joint',
+      ],
       [/피부|살|살쪽|몸|피부쪽|두드러기|발진/, 'skin'],
       [/여러 군데|여러곳|여기저기|전신/, 'other'],
     ]
@@ -208,33 +211,36 @@ function App() {
   }
 
   // 사진 선택 (InputBar 연동용)
-  const handlePhotoSelect = useCallback((e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handlePhotoSelect = useCallback(
+    (e) => {
+      const file = e.target.files?.[0]
+      if (!file) return
 
-    const label = new Date().getHours() >= 18 ? '밤' : '아침'
-    const photo = {
-      id: crypto.randomUUID(),
-      blob: file,
-      takenAt: new Date(),
-      label,
-    }
-    const src = URL.createObjectURL(file)
+      const label = new Date().getHours() >= 18 ? '밤' : '아침'
+      const photo = {
+        id: crypto.randomUUID(),
+        blob: file,
+        takenAt: new Date(),
+        label,
+      }
+      const src = URL.createObjectURL(file)
 
-    setVisit((v) => ({
-      ...v,
-      photos: [...v.photos, photo],
-    }))
-    // 사용자 사진 말풍선을 기록에 추가
-    setMessages((prev) => [
-      ...prev,
-      makeMessage('user', { text: label, photo: { src, caption: label } }),
-    ])
-    // 저장 안내 에이전트 말풍선 추가
-    addAgent(t('photo.saved'))
+      setVisit((v) => ({
+        ...v,
+        photos: [...v.photos, photo],
+      }))
+      // 사용자 사진 말풍선을 기록에 추가
+      setMessages((prev) => [
+        ...prev,
+        makeMessage('user', { text: label, photo: { src, caption: label } }),
+      ])
+      // 저장 안내 에이전트 말풍선 추가
+      addAgent(t('photo.saved'))
 
-    e.target.value = ''
-  }, [addAgent])
+      e.target.value = ''
+    },
+    [addAgent],
+  )
 
   const triggerPhotoInput = () => {
     fileInputRef.current?.click()
@@ -242,63 +248,63 @@ function App() {
 
   // 드로어/확인 처리
   const handleNewStart = () => {
-  setConfirmVisible(null)
-  if (messages.length > 0) {
-    const session = snapshotSession(visit, messages, step)
-    const next = [session, ...history.filter((h) => h.id !== session.id)]
-    setHistory(next)
-    saveHistory(next)
-  }
-  setVisit(emptyVisit())
-  setMessages([])
-  setStep(STEPS.WHERE)
-  setChipTrayVisible(true)
-  setInput('')
-  setIsReadOnly(false)
-  setSidebarOpen(false)
-}
-
-const handleOpenVisit = (id) => {
-  if (id === visit.id) {
+    setConfirmVisible(null)
+    if (messages.length > 0) {
+      const session = snapshotSession(visit, messages, step)
+      const next = [session, ...history.filter((h) => h.id !== session.id)]
+      setHistory(next)
+      saveHistory(next)
+    }
+    setVisit(emptyVisit())
+    setMessages([])
+    setStep(STEPS.WHERE)
+    setChipTrayVisible(true)
+    setInput('')
     setIsReadOnly(false)
     setSidebarOpen(false)
-    return
   }
 
-  const session = history.find((h) => h.id === id)
-  if (!session) return
+  const handleOpenVisit = (id) => {
+    if (id === visit.id) {
+      setIsReadOnly(false)
+      setSidebarOpen(false)
+      return
+    }
 
-  if (messages.length > 0) {
-    const saved = snapshotSession(visit, messages, step)
-    const next = [saved, ...history.filter((h) => h.id !== saved.id)]
-    setHistory(next)
-    saveHistory(next)
+    const session = history.find((h) => h.id === id)
+    if (!session) return
+
+    if (messages.length > 0) {
+      const saved = snapshotSession(visit, messages, step)
+      const next = [saved, ...history.filter((h) => h.id !== saved.id)]
+      setHistory(next)
+      saveHistory(next)
+    }
+
+    setVisit(session.visit)
+    setMessages(
+      (session.messages || []).map((m) => ({
+        ...m,
+        body: plainBody(m.body),
+      })),
+    )
+    setStep(session.step || STEPS.WHERE)
+    setChipTrayVisible(false)
+    setInput('')
+    setIsReadOnly(true)
+    setSidebarOpen(false)
   }
-
-  setVisit(session.visit)
-  setMessages(
-    (session.messages || []).map((m) => ({
-      ...m,
-      body: plainBody(m.body),
-    })),
-  )
-  setStep(session.step || STEPS.WHERE)
-  setChipTrayVisible(false)
-  setInput('')
-  setIsReadOnly(true)
-  setSidebarOpen(false)
-}
 
   const handleClearAll = () => {
-  setConfirmVisible(null)
-  clearHistory()
-  setHistory([])
-  setVisit(emptyVisit())
-  setMessages([])
-  setStep(STEPS.WHERE)
-  setChipTrayVisible(true)
-  setIsReadOnly(false)
-}
+    setConfirmVisible(null)
+    clearHistory()
+    setHistory([])
+    setVisit(emptyVisit())
+    setMessages([])
+    setStep(STEPS.WHERE)
+    setChipTrayVisible(true)
+    setIsReadOnly(false)
+  }
 
   // 응급 판정 (design.md S9 키워드 표 참고)
   const emergencySignals = [
@@ -333,7 +339,9 @@ const handleOpenVisit = (id) => {
     if (/\b(경련|발작|몸이 굳|떨림|의식 잃)\b/i.test(text)) {
       return { signal: '경련', cond: '경련이나 발작 증상이' }
     }
-    if (/\b(토혈|피를 토|커피색 토|검붉은 토|위장 출혈|토에서 피)\b/i.test(text)) {
+    if (
+      /\b(토혈|피를 토|커피색 토|검붉은 토|위장 출혈|토에서 피)\b/i.test(text)
+    ) {
       return { signal: '토혈', cond: '피를 토하는 증상이' }
     }
     return null
@@ -345,53 +353,57 @@ const handleOpenVisit = (id) => {
   // 히스토리 열람 하는 부분 추가가
 
   function plainBody(body) {
-  if (typeof body === 'string') return body
-  if (body && typeof body === 'object' && typeof body.props?.children === 'string') {
-    return body.props.children
+    if (typeof body === 'string') return body
+    if (
+      body &&
+      typeof body === 'object' &&
+      typeof body.props?.children === 'string'
+    ) {
+      return body.props.children
+    }
+    return ''
   }
-  return ''
-}
-function snapshotSession(visit, messages, step) {
-  const plainMessages = messages.map((m) => ({
-    id: m.id,
-    type: m.type,
-    text: m.text ?? '',
-    hint: m.hint ?? null,
-    body: plainBody(m.body),
-    photo: m.photo
-      ? { src: m.photo.src, caption: m.photo.caption }
-      : undefined,
-  }))
-  const firstUser = plainMessages.find((m) => m.type === 'user' && m.text)
-  return {
-    id: visit.id,
-    createdAt: new Date().toISOString(),
-    title: PART_LABEL[visit.part] || firstUser?.text || '진료 준비',
-    summary: `대화 ${plainMessages.length}개`,
-    visit: {
+  function snapshotSession(visit, messages, step) {
+    const plainMessages = messages.map((m) => ({
+      id: m.id,
+      type: m.type,
+      text: m.text ?? '',
+      hint: m.hint ?? null,
+      body: plainBody(m.body),
+      photo: m.photo
+        ? { src: m.photo.src, caption: m.photo.caption }
+        : undefined,
+    }))
+    const firstUser = plainMessages.find((m) => m.type === 'user' && m.text)
+    return {
       id: visit.id,
-      part: visit.part,
-      photos: [],
-      result: visit.result,
-      emergency: visit.emergency,
-    },
-    messages: plainMessages,
-    step,
+      createdAt: new Date().toISOString(),
+      title: PART_LABEL[visit.part] || firstUser?.text || '진료 준비',
+      summary: `대화 ${plainMessages.length}개`,
+      visit: {
+        id: visit.id,
+        part: visit.part,
+        photos: [],
+        result: visit.result,
+        emergency: visit.emergency,
+      },
+      messages: plainMessages,
+      step,
+    }
   }
-}
 
-const currentSession =
-  messages.length > 0
-    ? {
-        ...snapshotSession(visit, messages, step),
-        createdAt: visit.createdAt || new Date().toISOString(),
-        status: 'active',
-        summary: '작성 중',
-      }
-    : null
-const drawerVisits = currentSession
-  ? [currentSession, ...history.filter((h) => h.id !== currentSession.id)]
-  : history
+  const currentSession =
+    messages.length > 0
+      ? {
+          ...snapshotSession(visit, messages, step),
+          createdAt: visit.createdAt || new Date().toISOString(),
+          status: 'active',
+          summary: '작성 중',
+        }
+      : null
+  const drawerVisits = currentSession
+    ? [currentSession, ...history.filter((h) => h.id !== currentSession.id)]
+    : history
 
   return (
     <div className="app-shell">
@@ -449,8 +461,16 @@ const drawerVisits = currentSession
         {isResult && visit.result && (
           <Card>
             <div style={{ padding: '16px' }}>
-              <p style={{ margin: '0 0 8px', fontWeight: 600 }}>어느 과로 갈까요</p>
-              <p style={{ margin: '0 0 12px', color: 'var(--c-text-2)', fontSize: '12px' }}>
+              <p style={{ margin: '0 0 8px', fontWeight: 600 }}>
+                어느 과로 갈까요
+              </p>
+              <p
+                style={{
+                  margin: '0 0 12px',
+                  color: 'var(--c-text-2)',
+                  fontSize: '12px',
+                }}
+              >
                 {t('result.dept.note')}
               </p>
               <p style={{ margin: '0 0 12px' }}>진료실에서 이렇게 말해요</p>
@@ -524,7 +544,8 @@ const drawerVisits = currentSession
           onOpenVisit={handleOpenVisit}
           onNewVisit={() => {
             if (messages.length > 0) setConfirmVisible('new')
-            else handleNewStart()}}
+            else handleNewStart()
+          }}
           onClearAll={() => setConfirmVisible('clear')}
           hasActiveVisit={messages.length > 0}
           currentVisitId={visit.id}
