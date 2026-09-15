@@ -21,8 +21,8 @@ export async function chatCompletion(messages, tools = null, toolChoice = null, 
     messages,
     max_tokens: maxTokens,
   };
-  if (tools) body.tools = tools;
-  if (toolChoice) body.tool_choice = toolChoice;
+  if (Array.isArray(tools) && tools.length > 0) body.tools = tools;
+  if (body.tools && toolChoice) body.tool_choice = toolChoice;
 
   const res = await fetch(`${SOLAR_BASE}/chat/completions`, {
     method: 'POST',
