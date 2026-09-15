@@ -1,6 +1,15 @@
 // _lib/departments.js
 // 진료과 규칙표 v1 + 애매 시 내과/가정의학과
-// 입력: body_part (부위 ID), symptom_desc 등. 출력은 [{ name, reason, rank }]
+// 입력: body_part (부위 ID). 프론트 ID를 그대로 받을 수 있게 매핑함.
+// ear·neck·nose → face_neck(이비인후과), waist·knee → back_joint(정형외과)
+
+const FRONTEND_PART_MAP = {
+  ear: 'face_neck',
+  neck: 'face_neck',
+  nose: 'face_neck',
+  waist: 'back_joint',
+  knee: 'back_joint',
+};
 
 const DEPT_RULES = {
   skin: [
@@ -51,7 +60,8 @@ const DEPT_RULES = {
 };
 
 export function getDepartmentTop3(bodyPart, symptomDesc = '') {
-  const list = DEPT_RULES[bodyPart] || DEPT_RULES.other;
+  const mapped = FRONTEND_PART_MAP[bodyPart] || bodyPart;
+  const list = DEPT_RULES[mapped] || DEPT_RULES.other;
   return list.map((d, i) => ({
     name: d.name,
     reason: d.reason,

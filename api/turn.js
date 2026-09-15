@@ -1,10 +1,16 @@
 // api/turn.js — POST /api/turn (패키지 없이, 내장 fetch)
 // env: UPSTAGE_API_KEY, DATA_API_KEY
+// system prompt: repo 루트의 SKILL.md를 런타임에 읽어서 그대로 사용.
+// 실패 시 최소 안전 프롬프트로 fallback.
 
+import { readFileSync } from 'node:fs';
 import { checkEmergency } from './_lib/emergency.js';
 import { summarizeState } from './_lib/state.js';
 import { chatCompletion, extractToolCall, TOOL_DEFS, TOOL_MAP } from './_lib/solar.js';
 import { getDepartmentTop3 } from './_lib/departments.js';
+
+// SKILL.md 경로: 이 파일(api/turn.js)이 api/ 아래에 있으므로, repo 루트까지 두 단계 위로 올라간다.
+const SKILL_PATH = new URL('../../SKILL.md', import.meta.url).pathname;
 
 export async function POST(req) {
   let body;
@@ -231,18 +237,27 @@ function buildState(body) {
 function buildAgentMessages(body, state) {
   const profile = body.profile || {};
   const parts = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: SKILL_CONTENT },
     { role: 'user', content: `[부위] ${state.body_part || '미정'}\n[증상] ${state.symptom_desc || '미정'}\n[시기] ${state.since_when || '미정'}\n[복용약] ${state.current_meds.join(', ') || '없음'}\n[시도한 것] ${state.tried_things.join(', ') || '없음'}\n\n사용자 발화: "${body.user_text}"` },
   ];
   return parts;
 }
 
-const SYSTEM_PROMPT = `당신은 병원 진료 대본 서비스입니다.
+// SKILL.md 내용이 바로 system prompt가 된다. 읽기 실패 시 최소 안전 프롬프트로 fallback.
+const FALLBACK_SYSTEM_PROMPT = `당신은 병원 진료 대본 서비스입니다.
 사용자의 증상을 바탕으로 진료 전에 의사에게 말할 수 있는 대본을 만듭니다.
 진단이나 처방을 하지 않습니다.
 응답은 반드시 한국어로, 친절하고 명확하게 작성하세요.
 사용자의 발화에서 이미 제공된 정보는 다시 묻지 않습니다.
 필요한 정보만 선별하여 질문합니다.`;
+
+let SKILL_CONTENT;
+try {
+  SKILL_CONTENT = readFileSync(SKILL_PATH, 'utf8').trim();
+} catch (err) {
+  console.error('[turn] SKILL.md 읽기 실패:', err.message);
+  SKILL_CONTENT = FALLBACK_SYSTEM_PROMPT;
+}
 
 function buildResult(body, state, deptOverride) {
   const depts = deptOverride.length > 0 ? deptOverride : getDepartmentTop3(state.body_part);

@@ -7,7 +7,7 @@ export function validateTurnRequest(body) {
   if (typeof body.session_id !== 'string' || !body.session_id) errors.push('session_id 필요');
   if (typeof body.turn_index !== 'number' || !Number.isInteger(body.turn_index)) errors.push('turn_index 필요');
   if (typeof body.user_text !== 'string') errors.push('user_text 필요');
-  if (body.selected_part !== undefined && !['head','face_neck','chest','abdomen','back_joint','skin','other','multiple',null].includes(body.selected_part)) errors.push('selected_part 값 이상');
+  if (body.selected_part !== undefined && !['head','face_neck','chest','abdomen','back_joint','skin','other','multiple','eye','ear','neck','nose','waist','knee',null].includes(body.selected_part)) errors.push('selected_part 값 이상');
   return errors;
 }
 

@@ -79,7 +79,21 @@ const emptyVisit = () => ({
   photos: [],
   result: null,
   emergency: null,
-})
+  turnIndex: 1,
+  filledFields: [],
+  previousNote: null,
+});
+
+/** 백엔드 state 객체에서 채워진 필드 이름만 뽑아낸다. */
+function deduceFilledFields(state) {
+  const fields = [];
+  if (state.body_part) fields.push('body_part');
+  if (state.symptom_desc) fields.push('symptom_desc');
+  if (state.since_when) fields.push('since_when');
+  if (state.current_meds && state.current_meds.length > 0) fields.push('current_meds');
+  if (state.tried_things && state.tried_things.length > 0) fields.push('tried_things');
+  return fields;
+}
 
 /** 메시지 한 건 */
 function makeMessage(type, payload) {
@@ -87,14 +101,11 @@ function makeMessage(type, payload) {
 }
 
 function App() {
-  const [visit, setVisit] = useState({
-    id: crypto.randomUUID(),
-    part: null,
-    photos: [],
-    result: null,
-    emergency: null,
-    createdAt: new Date().toISOString(),
-  })
+  const [visit, setVisit] = useState(emptyVisit())
+  const visitRef = useRef(visit)
+  useEffect(() => {
+    visitRef.current = visit
+  }, [visit])
 
   // 메시지 누적 배열 — 앱 화면의 실제 대화 기록
   const initial = loadStore()
@@ -151,6 +162,12 @@ function App() {
       return
     }
 
+    setVisit((v) => ({
+      ...v,
+      turnIndex: data.turnIndex,
+      filledFields: data.state ? deduceFilledFields(data.state) : v.filledFields,
+    }))
+
     setMessages((prev) => [
       ...prev,
       makeMessage('agent', {
@@ -158,32 +175,79 @@ function App() {
         hint: data.hint ?? null,
       }),
     ])
-    // 초기 부위 칩 이후에는 백엔드 chips만 사용 (없으면 숨김)
     setChips(Array.isArray(data.chips) ? data.chips : [])
     if (data.result) {
       setVisit((v) => ({ ...v, result: data.result }))
       setStep(STEPS.RESULT)
     }
+
+    const events = data.events ?? []
+    const traceEvents = events.filter((e) => e.event !== 'done' && e.line)
+    const doneEvent = events.find((e) => e.event === 'done')
+
+    if (traceEvents.length > 0 || doneEvent) {
+      setMessages((prev) => {
+        let lastUserIndex = -1
+        for (let i = prev.length - 1; i >= 0; i--) {
+          if (prev[i].type === 'user') {
+            lastUserIndex = i
+            break
+          }
+        }
+        if (lastUserIndex === -1) return prev
+
+        const traceId = `trace-${data.turnIndex}`
+
+        if (doneEvent) {
+          const lines = [doneEvent.line]
+          const existingIndex = prev.findIndex((m) => m.id === traceId)
+          if (existingIndex !== -1) {
+            return prev.map((m) =>
+              m.id === traceId ? { ...m, lines, folded: true } : m,
+            )
+          }
+          const next = [...prev]
+          next.splice(
+            lastUserIndex + 1,
+            0,
+            { id: traceId, type: 'trace', lines, folded: true },
+          )
+          return next
+        }
+
+        const lines = traceEvents.map((e) => e.line)
+        const existingIndex = prev.findIndex((m) => m.id === traceId)
+        if (existingIndex !== -1) {
+          return prev.map((m) =>
+            m.id === traceId ? { ...m, lines, folded: false } : m,
+          )
+        }
+        const next = [...prev]
+        next.splice(
+          lastUserIndex + 1,
+          0,
+          { id: traceId, type: 'trace', lines, folded: false },
+        )
+        return next
+      })
+    }
   }, [])
 
   const sendUserTurn = useCallback(
     async (text) => {
-      if (!text || isSending || !!visit.emergency) return
+      const v = visitRef.current
+      if (!text || isSending || !!v.emergency) return
 
       setMessages((prev) => [...prev, makeMessage('user', { text })])
       setChips([])
       setIsSending(true)
 
       try {
-        const historyPayload = toApiHistory([
-          ...messages,
-          { type: 'user', text },
-        ])
         const data = await sendChatMessage({
-          sessionId: visit.id,
+          sessionId: v.id,
           profileId: selectedProfileId,
           message: text,
-          history: historyPayload,
+          visit: v,
         })
         applyAssistantResponse(data)
       } catch {
@@ -198,14 +262,7 @@ function App() {
         setIsSending(false)
       }
     },
-    [
-      applyAssistantResponse,
-      isSending,
-      messages,
-      selectedProfileId,
-      visit.emergency,
-      visit.id,
-    ],
+    [applyAssistantResponse, isSending, selectedProfileId],
   )
 
   // 칩 선택 → 사용자 메시지로 보내고 백엔드 응답 칩으로 교체
