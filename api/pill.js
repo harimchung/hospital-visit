@@ -4,7 +4,7 @@
 const PILL_BASE = 'https://apis.data.go.kr/1471000';
 
 async function fetchWithKey(path, params) {
-  const url = new URL(path, PILL_BASE);
+  const url = new URL(PILL_BASE + path);
   url.searchParams.set('serviceKey', process.env.DATA_API_KEY);
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null) url.searchParams.set(k, String(v));

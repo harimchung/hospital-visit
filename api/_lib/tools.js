@@ -9,7 +9,7 @@ const PILL_BASE = 'https://apis.data.go.kr/1471000';
 // ---------- fetch / 유틸 ----------
 
 async function fetchWithKey(path, params) {
-  const url = new URL(path, PILL_BASE);
+  const url = new URL(PILL_BASE + path);
   url.searchParams.set('serviceKey', process.env.DATA_API_KEY);
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
@@ -46,7 +46,7 @@ export const TOOL_LABEL = {
 
 // ---------- Solar function calling용 툴 정의 ----------
 
-export const TOOL_DEFS = [
+const TOOL_FUNCTIONS = [
   {
     name: 'lookup_drug',
     description: '약 이름(성분명 또는 상품명)을 받아 e약은요 공공데이터에서 제품 정보를 조회한다. 약 이름 하나만 받는다.',
@@ -280,3 +280,4 @@ export const TOOL_MAP = {
   pill_identify: pillIdentify,
   department_rules: departmentRules,
 };
+export const TOOL_DEFS = TOOL_FUNCTIONS.map((f) => ({ type: 'function', function: f }));
