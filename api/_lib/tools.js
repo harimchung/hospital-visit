@@ -32,6 +32,16 @@ function getNested(data, ...keys) {
   }
   return cur;
 }
+function pickItems(data, opName) {
+  const items =
+    getNested(data, 'body', 'items') ??
+    getNested(data, 'response', 'body', 'items') ??
+    getNested(data, opName, 'itemList') ??
+    [];
+  if (Array.isArray(items)) return items;
+  if (items && Array.isArray(items.item)) return items.item;
+  return [];
+}
 
 // ---------- 화면·로그용 한글 툴 이름 ----------
 
@@ -120,7 +130,7 @@ export async function lookupDrug(args) {
     '/DrbEasyDrugInfoService/getDrbEasyDrugList',
     { itemName: args.itemName || '' }
   );
-  const items = getNested(data, 'getDrbEasyDrugList', 'itemList') || [];
+  const items = pickItems(data, 'getDrbEasyDrugList');
   const list = Array.isArray(items)
     ? items.slice(0, 5).map((it) => ({ itemName: it.itemName, entName: it.entName }))
     : [];
@@ -136,7 +146,7 @@ export async function durDuplicate(args) {
         '/DURPrdlstInfoService03/getEfcyDplctInfoList03',
         { itemName: med }
       );
-      const list = getNested(data, 'getEfcyDplctInfoList03', 'itemList') || [];
+      const list = pickItems(data, 'getEfcyDplctInfoList03');
       if (Array.isArray(list)) {
         for (const row of list) {
           const eff = row.EFFECT_NAME || row.effectName || row.효능군 || '';
@@ -167,7 +177,7 @@ export async function durContraindication(args) {
         '/DURPrdlstInfoService03/getUsjntTabooInfoList03',
         { itemName: med }
       );
-      const list = getNested(data, 'getUsjntTabooInfoList03', 'itemList') || [];
+      const list = pickItems(data, 'getUsjntTabooInfoList03');
       if (Array.isArray(list)) {
         for (const row of list) {
           allRows.push({ med, row });
@@ -199,70 +209,60 @@ export async function durContraindication(args) {
 export async function durElderly(args) {
   const age = Number(args.age);
   if (!age || age < 65) return { ok: true, result: { cautions: [] } };
-  const data = await fetchWithKey(
-    '/DURPrdlstInfoService03/getOdsnAtentInfoList03',
-    { itemName: (args.med_names || [])[0] || '' }
-  );
-  const list = getNested(data, 'getOdsnAtentInfoList03', 'itemList') || [];
-  const cautions = Array.isArray(list)
-    ? list.slice(0, 5).map((row) => ({
-        med: row.itemName || row.ITEM_NAME || '',
-        detail: row.ODSNC_ATNT_CONTENT || row.odsnAtntContent || '',
-      }))
-    : [];
+  const meds = Array.isArray(args.med_names) ? args.med_names : [];
+  const cautions = [];
+  for (const med of meds) {
+    try {
+      const data = await fetchWithKey(
+        '/DURPrdlstInfoService03/getOdsnAtentInfoList03',
+        { itemName: med }
+      );
+      for (const row of pickItems(data, 'getOdsnAtentInfoList03').slice(0, 5)) {
+        cautions.push({
+          med: row.ITEM_NAME || row.itemName || med,
+          detail: row.PROHBT_CONTENT || row.REMK || '',
+        });
+      }
+    } catch {}
+  }
   return { ok: true, result: { cautions } };
 }
 
 export async function pillIdentify(args) {
   const shapeMap = {
-    원형: '원형',
-    oval: '타원',
-    oblong: '장방형',
-    triangle: '삼각형',
-    square: '사각형',
+    circle: '원형', oval: '타원형', oblong: '장방형', triangle: '삼각형', square: '사각형',
+    원형: '원형', 타원: '타원형', 타원형: '타원형', 장방형: '장방형', 삼각형: '삼각형', 사각형: '사각형',
   };
   const colorMap = {
-    하양: '하양',
-    흰색: '하양',
-    노랑: '노랑',
-    노랑색: '노랑',
-    주황: '주황',
-    주황색: '주황',
-    분홍: '분홍',
-    분홍색: '분홍',
-    빨강: '빨강',
-    빨간색: '빨강',
-    파랑: '파랑',
-    파란색: '파랑',
-    초록: '초록',
-    초록색: '초록',
-    보라: '보라',
-    보라색: '보라',
+    white: '하양', yellow: '노랑', orange: '주황', pink: '분홍', red: '빨강', blue: '파랑', green: '초록', purple: '보라',
+    하양: '하양', 흰색: '하양', 노랑: '노랑', 주황: '주황', 분홍: '분홍', 빨강: '빨강', 파랑: '파랑', 초록: '초록', 보라: '보라',
   };
-  const shape = shapeMap[args.shape] || args.shape || '';
-  const color = colorMap[args.color] || args.color || '';
+  const shape = shapeMap[args.shape] || '';
+  const color = colorMap[args.color] || '';
   const imprint = args.imprint || '';
+  if (!shape && !color && !imprint) {
+    return { ok: true, result: { candidates: [], count: 0 } };
+  }
   const data = await fetchWithKey(
-    '/PillIdentifyService02/getPillIdentifyList02',
+    '/MdcinGrnIdntfcInfoService03/getMdcinGrnIdntfcInfoList03',
     {
-      shape: shape || undefined,
-      color: color || undefined,
-      imprint: imprint || undefined,
+      drug_shape: shape || undefined,
+      color_class1: color || undefined,
+      print_front: imprint || undefined,
       numOfRows: 5,
       pageNo: 1,
     }
   );
-  const list = getNested(data, 'getPillIdentifyList02', 'itemList') || [];
-  const candidates = Array.isArray(list)
-    ? list.slice(0, 5).map((row) => ({
-        name: row.PILL_NAME || row.pillName || '',
-        maker: row.MAKER_NAME || row.makerName || '',
-        shape: row.SHAPE || row.shape || '',
-        color: row.COLOR || row.color || '',
-        imprint: row.IMPRINT || row.imprint || '',
-      }))
-    : [];
-  return { ok: true, result: { candidates, count: candidates.length } };
+  const candidates = pickItems(data, 'getMdcinGrnIdntfcInfoList03')
+    .slice(0, 5)
+    .map((row) => ({
+      name: row.ITEM_NAME || '',
+      maker: row.ENTP_NAME || '',
+      shape: row.DRUG_SHAPE || '',
+      color: row.COLOR_CLASS1 || '',
+      imprint: row.PRINT_FRONT || '',
+    }));
+    return { ok: true, result: { candidates, count: candidates.length } };
 }
 
 export async function departmentRules(args) {

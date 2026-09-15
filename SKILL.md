@@ -150,7 +150,72 @@ description: "병원 진료 전에 증상을 의사에게 말할 순서대로 �
 - 출력은 **목록/불릿이 아니라 진료실에서 그대로 읽을 수 있는 문장 형태(문장 배열)**로 낸다.
 - 약 정보가 불확실하면 문장 안에서 "정확한 이름은 확인 후 말씀드리겠습니다"처럼 자연스럽게 처리한다.
 
-### 진단·처방 금지 (이 스킬 본문 유지)
+### 응답 형식 (백엔드 코드가 이 절을 그대로 읽는다)
+
+아래 절은 **백엔드 `api/turn.js`가 Solar 응답 파싱에 사용하는 약속**이다. 이 절이 없으면 기존 `buildScript`/`buildQuestions` 정규식 조립으로 fallback한다.
+
+- Solar는 매 턴 **반드시 아래 모양의 JSON 객체 하나**만 `content`로 출력한다. 그 외 텍스트 금지.
+- `tool_call`(function calling)을 쓸 때만 도구 이벤트를 내고, 도구 호출 없이 질문/완료만 할 때는 JSON 하나면 충분하다.
+- JSON 필드:
+
+```json
+{
+  "state": {
+    "body_part": "head",
+    "symptom_desc": "지끈거림",
+    "since_when": "3일 전",
+    "current_meds": ["타이레놀"],
+    "tried_things": []
+  },
+  "next_field": "tried_things",
+  "question": "이미 해 본 조치가 있나요?",
+  "chips": [
+    { "id": "약국", "label": "약국에서 약 사 먹음", "isBodyPart": false },
+    { "id": "진료", "label": "병원 진료 받았음", "isBodyPart": false },
+    { "id": "검사", "label": "검사 받았음", "isBodyPart": false },
+    { "id": "없음", "label": "아직 아무것도 안 함", "isBodyPart": false },
+    { "id": "escape", "label": "잘 모르겠어", "isEscape": true }
+  ],
+  "emergency_suspected": false,
+  "script": [
+    "머리가 지끈거린 지는 3일쯤 됐어요.",
+    "타이레놀을 먹고 있고, 아직 따로 해 본 건 없어요."
+  ],
+  "questions": [
+    "이 증상이 긴장성 두통일까요?",
+    "타이레놀 계속 먹어도 되나요?",
+    "검사가 필요한가요?"
+  ]
+}
+```
+
+- `state`: 모델이 이번 발화에서 새로 확정하거나 보강한 5칸. **전부 채워 보낼 필요 없음.** 빈 문자열은 "모델도 이 칸은 아직 모르겠다"는 뜻. 코드는 이 값으로 기존 state를 덮어쓰되, 모델이 비운 칸은 기존 값을 유지한다.
+- `body_part`는 반드시 프론트→백엔드 매핑 이후의 **내부 ID**(`head`, `face_neck`, `chest`, `abdomen`, `back_joint`, `skin`, `eye`, `other`, `multiple`, `null`)로만 보낸다. `귀`, `머리` 같은 표시용 단어는 코드 쪽에서 `PART_MAP`으로 다시 변환하지 말고, Solar가 처음부터 내부 ID로 찍어주는 게 원칙. 다만 Solar가 표시용 단어를 쓰면 코드가 아래 매핑으로 보정한다: `귀·목·코 → face_neck`, `허리·무릎 → back_joint`, `머리 → head`.
+- `next_field`: 다음에 물을 칸 이름. 5칸이 모두 찼으면 `null`.
+- `question`: 한 문장. `next_field`가 `null`이면 무시해도 된다.
+- `chips`: 4~6개. 마지막 원소는 언제나 `"isEscape": true`. `next_field`가 `body_part`면 칩 원소에 `"isBodyPart": true`를 붙인다(부위 재선택용). 그 외 칸이면 칩은 보통 `isBodyPart: false`.
+- `emergency_suspected`: 모델이 "이 발화는 응급 신호로 의심된다"고 볼 때만 `true`. **단, 이건 코드 판정(`checkEmergency`)과 별개**이며, `emergency_suspected: true`만으로는 턴을 끊지 않는다. 아래 규칙대로 확인 질문으로 넘어간다.
+- `script`: 5칸 모두 찼을 때만 채운다. 1인칭 읽기 문장 4~6개의 배열. 안 찼으면 비운다(코드 fallback 시에도 여기서 채우지 않는다).
+- `questions`: 5칸 모두 찼을 때만 채운다. 정확한 질문 3개 배열. 안 찼으면 비운다.
+
+#### 모델 JSON을 코드로 해석하는 순서
+
+1. 응급 코드 검사(`checkEmergency`)를 **매 턴 제일 먼저** 수행한다. 걸리면 그 턴은 `safety → done`으로 끝. Solar 호출 안 함.
+2. 응급이 아니면 Solar에 위 JSON 응답을 요청한다.
+3. Solar 응답을 **우선 JSON으로 파싱**한다.
+   - 파싱 성공 + `state` 객체가 있으면, 코드는 그 `state`로 **기존 state를 덮어쓴다**. 단, 필드가 비어있거나(`""`, `null`) 없는 칸은 기존 값을 유지한다(모델이 그 칸을 몰라서 안 보낸 것으로 간주).
+   - `body_part`가 표시용 단어면 코드 매핑으로 내부 ID로 보정한다(위 표).
+   - 파싱 성공 + 5칸이 모두 차 있으면 `result`로 간다: `script`, `questions`는 모델 값을 그대로 쓰고, 진료과만 `getDepartmentTop3(state.body_part)`로 산출한다.
+   - 파싱 성공 + 빈 칸이 남아 있으면 `ask`로 간다: `question`, `chips`는 모델 값을 그대로 쓴다. `emergency_suspected`가 `true`면, 코드 응급 판정은 통과했으므로 **119로 끊지 말고** 확인 질문 턴(`ask`)으로 진행한다. 이때 `question`은 "응급일 수도 있는 증상 같은데, 더 자세히 말해 줄 수 있나요?" 방향으로 모델이 직접 적게 한다.
+   - 파싱 실패 / JSON이 아예 없으면 **그때만** 기존 `buildScript`/`buildQuestions` 정규식 조립로 fallback하고, `review` 이벤트에 `"모델 답 해석 실패, 규칙 조립"` 줄을 남긴다. 이 fallback result는 대본 문장이 모델 문장이 아니라 규칙 조립이라는 점이 구분된다.
+4. 도구 호출은 위 JSON 응답과 별개로, 모델이 `tool_call`을 낼 때만 수행한다. 도구 없이 질문/완료만 하는 턴도 정상이다.
+
+#### 응급 의심 처리(model 편)
+
+- 모델은 매 턴 발화를 읽고, 응급 10개 신호에 **의심만 되어도** `emergency_suspected: true`로 표시할 수 있다.
+- 단, 코드 `checkEmergency`가 이미 `emergency`를 잡아낸 턴은 Solar를 호출하지 않으므로 `emergency_suspected`는 그 턴에선 쓰이지 않는다.
+- 코드 판정으로 걸리지 않았는데 모델이 `emergency_suspected: true`로 보내면, 코드는 119로 바로 끊지 않고 **확인 질문**(`ask`)으로 진행한다. 실제 응급 여부는 사용자의 추가 설명을 받은 뒤 다음 턴 코드 검사에서 다시 판정한다.
+- 이 서비스의 응급 최종 판정은 언제나 코드 키워드 표가 맡는다. 모델은 "의심"을 표시할 뿐, 결론 내지 않는다.
 - 이 스킬은 **증상을 진단하고 병을 맞추지 않는다.** 의사와 논리적으로 이야기할 수 있도록 **증상을 정리하고 질문을 준비**하는 것만 한다.
 - 약 관련 전달은 **"등록돼 있다/없다"는 사실만 전하고 위험 여부 결론은 내지 않는다.** "이 약을 끊으세요" 같은 판단 표현은 하지 않는다. 확인은 의사에게 맡긴다.
 
