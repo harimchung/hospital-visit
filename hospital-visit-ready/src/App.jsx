@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { t } from './copy'
 import {
   loadStore,
   saveStore,
@@ -57,39 +58,6 @@ const emptyVisit = () => ({
   result: null,
   emergency: null,
 })
-
-// 텍스트는 컴포넌트 바깥에서 관리 — 렌더링 중 이펙트 의존성 꼬임을 피한다
-const I18N = {
-  'app.title': '병원 가기 전',
-  'input.placeholder': '직접 입력해도 돼요',
-  'input.placeholder.pill': '약 이름을 알면 여기에',
-  'where.hint': '칩을 고르거나, 직접 말해도 돼요',
-  'emergency.title': '지금 119',
-  'emergency.body':
-    '{signal}이 {cond} 계속되는 건 바로 병원에 가야 하는 신호예요. 대본은 만들지 않아요.',
-  'emergency.cta': '119 전화하기',
-  'drawer.title': '진료 기록',
-  'drawer.caption': '이 브라우저에만 저장, 암호화',
-  'drawer.new': '+ 새 진료 준비',
-  'drawer.clear': '기록 전부 지우기',
-  'drawer.clear.confirm':
-    '이 브라우저의 프로필, 사진, 메모를 전부 지워요. 되돌릴 수 없어요.',
-  'questions.hint':
-    '질문은 사용자가 쓰지 않아요. 답한 걸로 먼저 만들어 보여 줘요',
-  'result.dept.note': '규칙표로 고른 거예요. 진단이 아니에요.',
-  'result.note.placeholder':
-    '의사가 뭐라고 했는지 적어 두면 다음 대본에 들어가요',
-  'photo.ask':
-    '사진 찍어 둘래요? 밤이랑 아침이 다르게 보일 때 나란히 비교할 수 있어요.',
-  'photo.saved': '저장했어요. 이 브라우저에만 남고 서버로는 안 가요.',
-}
-function t(key, vars = {}) {
-  let text = I18N[key] || key
-  for (const [k, v] of Object.entries(vars)) {
-    text = text.replace(`{${k}}`, v)
-  }
-  return text
-}
 
 /** 메시지 한 건 */
 function makeMessage(type, payload) {
