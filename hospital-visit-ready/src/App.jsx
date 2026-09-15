@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { loadHistory, saveHistory, clearHistory } from './storage'
+
 import './App.css'
 import './tokens.css'
 import {
@@ -28,6 +30,25 @@ const STEPS = {
   QUESTIONS: 'questions',
   RESULT: 'result',
 }
+
+const PART_LABEL = {
+  head: '머리',
+  face_neck: '눈·귀·코·목',
+  chest: '가슴',
+  abdomen: '배',
+  back_joint: '허리·관절',
+  skin: '피부',
+  other: '그 외',
+  multiple: '여러 군데',
+}
+
+const emptyVisit = () => ({
+  id: crypto.randomUUID(),
+  part: null,
+  photos: [],
+  result: null,
+  emergency: null,
+})
 
 // 텍스트는 컴포넌트 바깥에서 관리 — 렌더링 중 이펙트 의존성 꼬임을 피한다
 const I18N = {
@@ -73,6 +94,8 @@ function App() {
 
   // 메시지 누적 배열 — 앱 화면의 실제 대화 기록
   const [messages, setMessages] = useState([])
+  const [history, setHistory] = useState(() => loadHistory())
+  const [isReadOnly, setIsReadOnly] = useState(false)
   const [step, setStep] = useState(STEPS.WHERE)
   const [chipTrayVisible, setChipTrayVisible] = useState(true)
   const [input, setInput] = useState('')
@@ -124,7 +147,7 @@ function App() {
       if (chip.id === 'multiple') {
         setChipTrayVisible(false)
         setStep(STEPS.PHOTO)
-        addAgent(<p>어디부터요? 하나씩 골라요</p>)
+        addAgent('어디부터요? 하나씩 골라요')
         return
       }
 
@@ -150,15 +173,14 @@ function App() {
         setVisit((v) => ({ ...v, part: matched }))
         setChipTrayVisible(false)
         setStep(STEPS.PHOTO)
-        addAgent(<p>{t('photo.ask')}</p>)
+        addAgent(t('photo.ask'))
         setInput('')
         return
       }
       // 매칭 실패 → 한 번 되묻기
       setInput('')
       addAgent(
-        <p>어디 근처예요?</p>,
-        t('where.hint'),
+        '어디 근처예요?', t('where.hint')
       )
       return
     }
@@ -207,7 +229,7 @@ function App() {
       makeMessage('user', { text: label, photo: { src, caption: label } }),
     ])
     // 저장 안내 에이전트 말풍선 추가
-    addAgent(<p>{t('photo.saved')}</p>)
+    addAgent(t('photo.saved'))
 
     e.target.value = ''
   }, [addAgent])
@@ -218,34 +240,49 @@ function App() {
 
   // 드로어/확인 처리
   const handleNewStart = () => {
-    setConfirmVisible(null)
-    setVisit({
-      id: crypto.randomUUID(),
-      part: null,
-      photos: [],
-      result: null,
-      emergency: null,
-    })
-    setMessages([])
-    setStep(STEPS.WHERE)
-    setChipTrayVisible(true)
-    setInput('')
-    setSidebarOpen(false)
+  setConfirmVisible(null)
+  if (messages.length > 0) {
+    const session = snapshotSession(visit, messages, step)
+    const next = [session, ...history.filter((h) => h.id !== session.id)]
+    setHistory(next)
+    saveHistory(next)
   }
+  setVisit(emptyVisit())
+  setMessages([])
+  setStep(STEPS.WHERE)
+  setChipTrayVisible(true)
+  setInput('')
+  setIsReadOnly(false)
+  setSidebarOpen(false)
+}
+
+const handleOpenVisit = (id) => {
+  const session = history.find((h) => h.id === id)
+  if (!session) return
+  setVisit(session.visit)
+  setMessages(
+    (session.messages || []).map((m) => ({
+      ...m,
+      body: plainBody(m.body),
+    })),
+  )
+  setStep(session.step || STEPS.WHERE)
+  setChipTrayVisible(false)
+  setInput('')
+  setIsReadOnly(true)
+  setSidebarOpen(false)
+}
 
   const handleClearAll = () => {
-    setConfirmVisible(null)
-    setVisit({
-      id: crypto.randomUUID(),
-      part: null,
-      photos: [],
-      result: null,
-      emergency: null,
-    })
-    setMessages([])
-    setStep(STEPS.WHERE)
-    setChipTrayVisible(true)
-  }
+  setConfirmVisible(null)
+  clearHistory()
+  setHistory([])
+  setVisit(emptyVisit())
+  setMessages([])
+  setStep(STEPS.WHERE)
+  setChipTrayVisible(true)
+  setIsReadOnly(false)
+}
 
   // 응급 판정 (design.md S9 키워드 표 참고)
   const emergencySignals = [
@@ -288,6 +325,44 @@ function App() {
 
   const isEmergency = !!visit.emergency
   const isResult = step === STEPS.RESULT
+
+  // 히스토리 열람 하는 부분 추가가
+
+  function plainBody(body) {
+  if (typeof body === 'string') return body
+  if (body && typeof body === 'object' && typeof body.props?.children === 'string') {
+    return body.props.children
+  }
+  return ''
+}
+function snapshotSession(visit, messages, step) {
+  const plainMessages = messages.map((m) => ({
+    id: m.id,
+    type: m.type,
+    text: m.text ?? '',
+    hint: m.hint ?? null,
+    body: plainBody(m.body),
+    photo: m.photo
+      ? { src: m.photo.src, caption: m.photo.caption }
+      : undefined,
+  }))
+  const firstUser = plainMessages.find((m) => m.type === 'user' && m.text)
+  return {
+    id: visit.id,
+    createdAt: new Date().toISOString(),
+    title: PART_LABEL[visit.part] || firstUser?.text || '진료 준비',
+    summary: `대화 ${plainMessages.length}개`,
+    visit: {
+      id: visit.id,
+      part: visit.part,
+      photos: [],
+      result: visit.result,
+      emergency: visit.emergency,
+    },
+    messages: plainMessages,
+    step,
+  }
+}
 
   return (
     <div className="app-shell">
@@ -370,7 +445,7 @@ function App() {
             {messages.map((msg) =>
               msg.type === 'agent' ? (
                 <AgentBubble key={msg.id} hint={msg.hint}>
-                  {msg.body}
+                  {typeof msg.body === 'string' ? msg.body : ''}
                 </AgentBubble>
               ) : (
                 <UserBubble key={msg.id} photo={msg.photo}>
@@ -382,7 +457,7 @@ function App() {
         )}
 
         {/* 칩 트레이 (S1) */}
-        {showChips && (
+        {showChips && !isReadOnly && (
           <ChipTray chips={whereChips} onSelect={handleChipSelect} />
         )}
 
@@ -407,7 +482,7 @@ function App() {
         onSend={handleSendText}
         placeholder={t('input.placeholder')}
         hasCamera={!isEmergency}
-        disabled={isEmergency}
+        disabled={isEmergency || isReadOnly}
         onCameraClick={triggerPhotoInput}
       />
 
@@ -416,9 +491,14 @@ function App() {
         <Drawer
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          onNewVisit={() => setConfirmVisible('new')}
+          visits={history}
+          onOpenVisit={handleOpenVisit}
+          onNewVisit={() => {
+            if (messages.length > 0) setConfirmVisible('new')
+            else handleNewStart()}}
           onClearAll={() => setConfirmVisible('clear')}
-          hasActiveVisit={step !== STEPS.WHERE}
+          hasActiveVisit={messages.length > 0}
+          currentVisitId={visit.id}
         />
       )}
 

@@ -46,6 +46,7 @@ export default function Drawer({
   onNewVisit,
   onClearAll,
   hasActiveVisit = false,
+  currentVisitId
 }) {
   if (!open) return null
 
@@ -56,13 +57,7 @@ export default function Drawer({
   }
 
   const handleNewVisitClick = () => {
-    if (hasActiveVisit) {
-      // 확인 시트에서 처리 (상위 컴포넌트에서 관리)
-      onNewVisit?.(true)
-    } else {
-      onClose?.()
-      onNewVisit?.(false)
-    }
+  onNewVisit?.()
   }
 
   return (
@@ -154,7 +149,7 @@ export default function Drawer({
                 {visits.map((visit) => (
                   <li
                     key={visit.id}
-                    className="visit-item"
+                    className={`visit-item ${visit.id === currentVisitId ? 'is-active' : ''}`}
                     onClick={() => onOpenVisit?.(visit.id)}
                     role="button"
                     tabIndex={0}

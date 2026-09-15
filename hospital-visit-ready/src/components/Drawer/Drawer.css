@@ -190,8 +190,7 @@
   margin-bottom: var(--sp-1);
   cursor: pointer;
   border: none;
-  background: transparent;
-  width: 100%;
+  background: var(--c-primary-tint);  width: 100%;
   text-align: left;
   font-family: var(--font);
   transition:
