@@ -82,6 +82,7 @@ const emptyVisit = () => ({
   turnIndex: 1,
   filledFields: [],
   previousNote: null,
+  state: null,
 });
 
 /** 백엔드 state 객체에서 채워진 필드 이름만 뽑아낸다. */
@@ -165,16 +166,19 @@ function App() {
     setVisit((v) => ({
       ...v,
       turnIndex: data.turnIndex,
+      state: data.state ?? v.state ?? null,
       filledFields: data.state ? deduceFilledFields(data.state) : v.filledFields,
     }))
 
-    setMessages((prev) => [
-      ...prev,
-      makeMessage('agent', {
-        body: data.reply,
-        hint: data.hint ?? null,
-      }),
-    ])
+    if (data.reply) {
+      setMessages((prev) => [
+        ...prev,
+        makeMessage('agent', {
+          body: data.reply,
+          hint: data.hint ?? null,
+        }),
+      ])
+    }
     setChips(Array.isArray(data.chips) ? data.chips : [])
     if (data.result) {
       setVisit((v) => ({ ...v, result: data.result }))
@@ -245,9 +249,9 @@ function App() {
       try {
         const data = await sendChatMessage({
           sessionId: v.id,
-          profileId: selectedProfileId,
           message: text,
           visit: v,
+          profile: profiles.find((p) => p.id === selectedProfileId) || null,
         })
         applyAssistantResponse(data)
       } catch {
@@ -262,14 +266,14 @@ function App() {
         setIsSending(false)
       }
     },
-    [applyAssistantResponse, isSending, selectedProfileId],
+    [applyAssistantResponse, isSending, profiles, selectedProfileId],
   )
 
   // 칩 선택 → 사용자 메시지로 보내고 백엔드 응답 칩으로 교체
   const handleChipSelect = useCallback(
     (chip) => {
       if (!chip || !!visit.emergency || isSending) return
-      if (chip.id) {
+      if (chip.isBodyPart) {
         setVisit((v) => ({ ...v, part: chip.id }))
       }
       sendUserTurn(chip.label)
@@ -489,6 +493,8 @@ function App() {
       text: m.text ?? '',
       hint: m.hint ?? null,
       body: plainBody(m.body),
+      lines: m.lines ?? undefined,
+      folded: m.folded ?? undefined,
       photo: m.photo
         ? { src: m.photo.src, caption: m.photo.caption }
         : undefined,
@@ -507,6 +513,9 @@ function App() {
         result: visit.result,
         emergency: visit.emergency,
         createdAt: visit.createdAt,
+        turnIndex: visit.turnIndex ?? 1,
+        filledFields: visit.filledFields ?? [],
+        state: visit.state ?? null,
       },
       messages: plainMessages,
       step,
@@ -562,14 +571,14 @@ function App() {
         {/* ===== 메시지 영역 ===== */}
         <div className="messages" ref={messagesRef}>
           {/* 진행 상태 표시 (원칙 9) */}
-          {false && (
+          {isSending && !isResult && (
             <div
               className="progress-indicator"
               role="status"
               aria-live="polite"
             >
               <span className="progress-dot" aria-hidden="true" />
-              {t('questions.hint')}
+              답을 정리하고 있어요
             </div>
           )}
 
@@ -608,31 +617,41 @@ function App() {
           {/* S8 결과 카드 (현재는 조건 충족 시만 렌더) */}
           {isResult && visit.result && (
             <Card>
-              <div style={{ padding: '16px' }}>
-                <p style={{ margin: '0 0 8px', fontWeight: 600 }}>
-                  어느 과로 갈까요
-                </p>
-                <p
-                  style={{
-                    margin: '0 0 12px',
-                    color: 'var(--c-text-2)',
-                    fontSize: '12px',
-                  }}
+              <h3 className="c-card__section-title">{t('card.dept.title')}</h3>
+              <Card.DeptRankList depts={visit.result.department_top3} />
+              <p className="c-card__hint">{t('result.dept.note')}</p>
+
+              <h3 className="c-card__section-title">{t('card.script.title')}</h3>
+              <Card.ScriptList items={visit.result.script} />
+
+              <h3 className="c-card__section-title">{t('card.questions.title')}</h3>
+              <Card.Questions items={visit.result.questions} />
+
+              <Card.Actions>
+                <Button
+                  kind="primary"
+                  onClick={() =>
+                    navigator.clipboard.writeText(
+                      [
+                        ...(visit.result.script || []),
+                        '',
+                        ...(visit.result.questions || []).map((q, i) => `${i + 1}. ${q}`),
+                      ].join('\n'),
+                    )
+                  }
                 >
-                  {t('result.dept.note')}
-                </p>
-                <p style={{ margin: '0 0 12px' }}>진료실에서 이렇게 말해요</p>
-                <p style={{ margin: '0 0 12px' }}>꼭 물어볼 세 가지</p>
-                <div className="c-card__actions">
-                  <Button kind="primary">복사</Button>
-                  <Button kind="secondary">PDF로 저장</Button>
-                </div>
-                <textarea
-                  className="c-card__textarea"
-                  placeholder={t('result.note.placeholder')}
-                  style={{ marginTop: '12px' }}
-                />
-              </div>
+                  {t('card.action.copy')}
+                </Button>
+                <Button kind="secondary" onClick={() => window.print()}>
+                  {t('card.action.print')}
+                </Button>
+              </Card.Actions>
+
+              <textarea
+                className="c-card__textarea"
+                placeholder={visit.result.note_placeholder || t('result.note.placeholder')}
+                style={{ marginTop: '12px' }}
+              />
             </Card>
           )}
 
@@ -644,6 +663,12 @@ function App() {
                   <AgentBubble key={msg.id} hint={msg.hint}>
                     {msg.body}
                   </AgentBubble>
+                ) : msg.type === 'trace' ? (
+                  <div key={msg.id} className="trace-lines">
+                    {(msg.lines || []).map((line, i) => (
+                      <div key={i} className="trace-line">{line}</div>
+                    ))}
+                  </div>
                 ) : (
                   <UserBubble key={msg.id} photo={msg.photo}>
                     {msg.text ?? ''}

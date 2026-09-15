@@ -40,7 +40,7 @@ export async function sendChatMessage(payload) {
   return fromBackendResponse(await res.json());
 }
 
-function toBackendPayload({ sessionId, profileId, message, visit }) {
+function toBackendPayload({ sessionId, message, visit, profile }) {
   return {
     session_id: sessionId,
     turn_index: Number.isInteger(visit.turnIndex) ? visit.turnIndex : 1,
@@ -53,8 +53,16 @@ function toBackendPayload({ sessionId, profileId, message, visit }) {
       label: p.label ?? null,
       caption: p.caption ?? null,
     })),
-    profile: null,
+    profile: profile
+      ? {
+          nickname: profile.nickname ?? null,
+          age: profile.age ?? null,
+          allergies: null,
+          chronic_diseases: null,
+        }
+      : null,
     previous_note: visit.previousNote ?? null,
+    state: visit.state ?? null,
     history: {
       filled_fields: Array.isArray(visit.filledFields) ? visit.filledFields : [],
       last_emergency: !!(visit.emergency ?? false),

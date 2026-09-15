@@ -10,7 +10,7 @@ export const BODY_PART_CHIP_POOL = [
   { id: 'waist', label: '허리' },
   { id: 'knee', label: '무릎' },
   { id: 'skin', label: '피부' },
-]
+].map((c) => ({ ...c, isBodyPart: true }))
 
 const CHIP_GAP = 8
 const CHIP_PAD_X = 28 // padding 0 14 × 2
