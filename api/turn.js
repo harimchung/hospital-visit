@@ -4,7 +4,7 @@
 // 실패 시 최소 안전 프롬프트로 fallback.
 
 import { readFileSync } from 'node:fs';
-import { checkEmergency } from './_lib/emergency.js';
+import { checkEmergency, checkDistress, EMERGENCY_CONFIRM_CHIPS } from './_lib/emergency.js';
 import { summarizeState, STATE_FIELDS } from './_lib/state.js';
 import { chatCompletion, extractToolCall } from './_lib/solar.js';
 import { TOOL_DEFS, TOOL_MAP, TOOL_LABEL } from './_lib/tools.js';
@@ -50,6 +50,7 @@ const PART_LABEL_KO = {
 };
 const FIELD_LABEL = {
   body_part: '부위', symptom_desc: '증상', since_when: '언제부터', current_meds: '약', tried_things: '해 본 것',
+  emergency_confirm: '응급 확인',
 };
 
 function isFilled(v) {
@@ -215,6 +216,37 @@ export async function POST(req) {
     payload: { filled_fields: sum2.filled, next_field: sum2.next },
   });
 
+  // 응급 의심이면 다음 칸을 묻지 않고 확인 턴을 연다. 칩 문장은 코드 표에 걸리게 만들어 두었으니
+  // 사용자가 칩을 누르면 다음 턴 첫 검사에서 코드가 119로 판정한다. 확인 턴은 연속 두 번 열지 않는다
+  const suspicious = !!(parsed && parsed.emergency_suspected) || checkDistress(user_text);
+  if (suspicious && askedField !== 'emergency_confirm') {
+    events.push({
+      event: 'review',
+      line: parsed && parsed.emergency_suspected ? '응급 의심(모델), 확인 칩으로 감' : '응급 의심(강한 표현), 확인 칩으로 감',
+      body: null, hint: null, tool: null, tool_status: null, tool_error: null, payload: {},
+    });
+    const question = '말씀을 들으니 응급일 수도 있어서 먼저 확인할게요. 지금 이런 상태에 해당하는 게 있나요?';
+    mergedState.asked_field = 'emergency_confirm';
+    events.push({
+      event: 'ask',
+      line: `질문: ${question}`,
+      body: question,
+      hint: '해당하면 눌러 주세요. 아니면 마지막 칩을 누르면 이어서 진행해요',
+      tool: null,
+      tool_status: null,
+      tool_error: null,
+      payload: {
+        next_question: question,
+        filled_fields: sum2.filled,
+        next_field: null,
+        chips: EMERGENCY_CONFIRM_CHIPS.map((c) => ({ ...c, isEscape: c.isEscape === true, isBodyPart: false })),
+      },
+    });
+    events.push(done(toolRound + 2, toolCallCount, false));
+    console.log(`[turn] session_id=${session_id} turn_index=${turn_index} events_count=${events.length} tools=${toolCallCount} emergency=false`);
+    return jsonResponse(turn_index + 1, events, mergedState, null);
+  }
+
   if (!allFilled) {
     // 빈 칸이 남았으면 ask. 모델이 고른 칸을 존중하되, 같은 칸을 연달아 두 번 물으면 코드가 다음 빈 칸으로 넘긴다
     const repeated = !!(parsed && parsed.next_field && parsed.next_field === askedField);
@@ -227,14 +259,6 @@ export async function POST(req) {
         line: `같은 칸(${FIELD_LABEL[askedField]}) 재질문 감지, 다음 칸으로`,
         body: null, hint: null, tool: null, tool_status: null, tool_error: null, payload: {},
       });
-    }
-    if (parsed && parsed.emergency_suspected) {
-      events.push({
-        event: 'review',
-        line: '응급 의심, 확인 질문으로 감',
-        body: null, hint: null, tool: null, tool_status: null, tool_error: null, payload: {},
-      });
-      question = '응급 상황일 수도 있어서 확인이 필요해요. ' + question;
     }
     if (!parsed) {
       events.push({

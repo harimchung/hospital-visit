@@ -56,6 +56,29 @@ const SIGNALS = [
   },
 ];
 
+// 응급 확인 턴에 쓰는 칩. 각 라벨은 위 표에 반드시 걸리도록 쓴다 (테스트로 보장)
+export const EMERGENCY_CONFIRM_CHIPS = [
+  { id: 'em_consciousness', label: '의식이 흐려져요' },
+  { id: 'em_paralysis', label: '한쪽 팔다리에 힘이 빠져요' },
+  { id: 'em_chest', label: '가슴을 쥐어짜듯 아프고 20분 넘게 계속돼요' },
+  { id: 'em_breath', label: '숨을 못 쉬겠어요' },
+  { id: 'em_bleed', label: '피가 안 멎어요' },
+  { id: 'em_headache', label: '갑자기 벼락 치듯 심한 두통이에요' },
+  { id: 'em_seizure', label: '경련을 해요' },
+  { id: 'em_blood', label: '피를 토하거나 검은 변을 봤어요' },
+  { id: 'em_abdomen', label: '배가 딱딱하게 굳었어요' },
+  { id: 'em_fever', label: '열이 나면서 목이 뻣뻣해요' },
+  { id: 'em_none', label: '그 정도는 아니에요', isEscape: true },
+];
+
+// 강한 표현. 응급 확정이 아니라 확인 턴을 여는 신호. 모델이 의심을 안 켜도 여기 걸리면 확인한다
+const DISTRESS = /죽을 (것|거) 같|죽을것 같|죽을거 같|죽을거같|죽을것같|쓰러질 (것|거) 같|정신이 아득|눈앞이 (캄캄|하얘)|식은땀|119|응급실/;
+
+export function checkDistress(userText) {
+  if (!userText) return false;
+  return DISTRESS.test(String(userText).replace(/\s+/g, ' ').trim());
+}
+
 export function checkEmergency(userText) {
   if (!userText) return { ok: true };
   const text = String(userText).replace(/\s+/g, ' ').trim();
