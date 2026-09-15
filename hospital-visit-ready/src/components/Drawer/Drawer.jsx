@@ -46,7 +46,8 @@ export default function Drawer({
   onNewVisit,
   onClearAll,
   hasActiveVisit = false,
-  currentVisitId
+  currentVisitId,
+  onAddProfile,
 }) {
   if (!open) return null
 
@@ -57,7 +58,7 @@ export default function Drawer({
   }
 
   const handleNewVisitClick = () => {
-  onNewVisit?.()
+    onNewVisit?.()
   }
 
   return (
@@ -70,7 +71,12 @@ export default function Drawer({
       />
 
       {/* 드로어 패널 */}
-      <aside className="drawer" role="dialog" aria-label="진료 기록" aria-modal="true">
+      <aside
+        className="drawer"
+        role="dialog"
+        aria-label="진료 기록"
+        aria-modal="true"
+      >
         {/* 헤더 */}
         <header className="drawer-header">
           <div className="drawer-header-text">
@@ -104,7 +110,13 @@ export default function Drawer({
           {/* 프로필 */}
           <ul className="profile-list">
             {profiles.length === 0 ? (
-              <li style={{ padding: '12px 0', textAlign: 'center', color: 'var(--c-text-3)' }}>
+              <li
+                style={{
+                  padding: '12px 0',
+                  textAlign: 'center',
+                  color: 'var(--c-text-3)',
+                }}
+              >
                 {t('drawer.profile.empty')}
               </li>
             ) : (
@@ -123,7 +135,7 @@ export default function Drawer({
                   }}
                 >
                   <span>
-                    <span className="profile-name">{profile.name}</span>
+                    <span className="profile-name">{profile.nickname}</span>
                     <span className="profile-age">({profile.age})</span>
                   </span>
                 </li>
@@ -134,9 +146,7 @@ export default function Drawer({
           <button
             type="button"
             className="profile-add-btn"
-            onClick={() => {
-              // TODO: 프로필 추가 모달
-            }}
+            onClick={() => onAddProfile?.()}
           >
             + 프로필 추가
           </button>
@@ -144,7 +154,9 @@ export default function Drawer({
           {/* 지난 진료 */}
           {visits.length > 0 ? (
             <>
-              <h3 className="drawer-section-title">{t('drawer.section.visits')}</h3>
+              <h3 className="drawer-section-title">
+                {t('drawer.section.visits')}
+              </h3>
               <ul className="visit-list">
                 {visits.map((visit) => (
                   <li
@@ -170,7 +182,13 @@ export default function Drawer({
               </ul>
             </>
           ) : (
-            <p style={{ padding: '12px 0', textAlign: 'center', color: 'var(--c-text-3)' }}>
+            <p
+              style={{
+                padding: '12px 0',
+                textAlign: 'center',
+                color: 'var(--c-text-3)',
+              }}
+            >
               {t('drawer.visits.empty')}
             </p>
           )}

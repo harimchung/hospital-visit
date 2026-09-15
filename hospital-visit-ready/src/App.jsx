@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { loadHistory, saveHistory, clearHistory } from './storage'
+import {
+  loadStore,
+  saveStore,
+  loadHistory,
+  saveHistory,
+  clearAll,
+} from './storage'
 
 import './App.css'
 import './tokens.css'
@@ -15,6 +21,7 @@ import {
   Drawer,
   ConfirmDialog,
   Button,
+  ProfileForm,
 } from './components'
 
 const STEPS = {
@@ -100,8 +107,12 @@ function App() {
   })
 
   // 메시지 누적 배열 — 앱 화면의 실제 대화 기록
+  const initial = loadStore()
+  const [profiles, setProfiles] = useState(initial.profiles)
+  const [selectedProfileId, setSelectedProfileId] = useState(null)
+  const [history, setHistory] = useState(() => loadHistory(null))
+  const [profileFormOpen, setProfileFormOpen] = useState(false)
   const [messages, setMessages] = useState([])
-  const [history, setHistory] = useState(() => loadHistory())
   const [isReadOnly, setIsReadOnly] = useState(false)
   const [step, setStep] = useState(STEPS.WHERE)
   const [chipTrayVisible, setChipTrayVisible] = useState(true)
@@ -253,7 +264,7 @@ function App() {
       const session = snapshotSession(visit, messages, step)
       const next = [session, ...history.filter((h) => h.id !== session.id)]
       setHistory(next)
-      saveHistory(next)
+      saveHistory(selectedProfileId, next)
     }
     setVisit(emptyVisit())
     setMessages([])
@@ -278,7 +289,7 @@ function App() {
       const saved = snapshotSession(visit, messages, step)
       const next = [saved, ...history.filter((h) => h.id !== saved.id)]
       setHistory(next)
-      saveHistory(next)
+      saveHistory(selectedProfileId, next)
     }
 
     setVisit(session.visit)
@@ -297,13 +308,55 @@ function App() {
 
   const handleClearAll = () => {
     setConfirmVisible(null)
-    clearHistory()
+    clearAll()
     setHistory([])
     setVisit(emptyVisit())
     setMessages([])
     setStep(STEPS.WHERE)
     setChipTrayVisible(true)
     setIsReadOnly(false)
+  }
+
+  const handleAddProfile = (profile) => {
+    const next = [...profiles, profile]
+    setProfiles(next)
+    const store = loadStore()
+    store.profiles = next
+    if (!store.historyByProfile[profile.id]) {
+      store.historyByProfile[profile.id] = []
+    }
+    saveStore(store)
+    setProfileFormOpen(false)
+  }
+
+  const handleSelectProfile = (id) => {
+    if (id === selectedProfileId) {
+      setSelectedProfileId(null)
+      setHistory(loadHistory(null))
+
+      return
+    }
+
+    if (messages.length > 0) {
+      const saved = snapshotSession(visit, messages, step)
+      saved.profileId = selectedProfileId
+      const next = [saved, ...history.filter((h) => h.id !== saved.id)]
+      setHistory(next)
+      saveHistory(selectedProfileId, next)
+    }
+
+    setSelectedProfileId(id)
+    const store = loadStore()
+    store.selectedProfileId = id
+    saveStore(store)
+
+    setHistory(loadHistory(id))
+    setVisit(emptyVisit())
+    setMessages([])
+    setStep(STEPS.WHERE)
+    setChipTrayVisible(true)
+    setIsReadOnly(false)
+    setInput('')
   }
 
   // 응급 판정 (design.md S9 키워드 표 참고)
@@ -389,6 +442,7 @@ function App() {
       },
       messages: plainMessages,
       step,
+      profileId: selectedProfileId,
     }
   }
 
@@ -538,9 +592,13 @@ function App() {
       {/* ===== C9 Drawer ===== */}
       {sidebarOpen && (
         <Drawer
+          profiles={profiles}
+          selectedProfileId={selectedProfileId}
+          onSelectProfile={handleSelectProfile}
+          onAddProfile={() => setProfileFormOpen(true)}
+          visits={drawerVisits}
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          visits={drawerVisits}
           onOpenVisit={handleOpenVisit}
           onNewVisit={() => {
             if (messages.length > 0) setConfirmVisible('new')
@@ -561,6 +619,11 @@ function App() {
         body="진행 중 대화가 있으면 지금 것 버리고 새로 시작할까요?"
         confirmLabel="시작하기"
         variant="secondary"
+      />
+      <ProfileForm
+        open={profileFormOpen}
+        onClose={() => setProfileFormOpen(false)}
+        onSubmit={handleAddProfile}
       />
       <ConfirmDialog
         open={confirmVisible === 'clear'}

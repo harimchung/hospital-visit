@@ -10,6 +10,7 @@ import Hint from './Hint/Hint'
 import InputBar from './InputBar/InputBar'
 import PhotoBubble from './PhotoBubble/PhotoBubble'
 import UserBubble from './UserBubble/UserBubble'
+import ProfileForm from './ProfileForm/ProfileForm'
 
 export {
   AgentBubble,
@@ -23,4 +24,5 @@ export {
   InputBar,
   PhotoBubble,
   UserBubble,
+  ProfileForm,
 }

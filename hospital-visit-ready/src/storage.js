@@ -1,18 +1,54 @@
-const KEY = 'visitready.history'
+const KEY = 'visitready.store'
+const OLD_KEY = 'visitready.history'
 
-export function loadHistory() {
+const emptyStore = () => ({
+  profiles: [],
+  selectedProfileId: null,
+  historyByProfile: { guest: [] },
+})
+
+function historyKey(profileId) {
+  return profileId || 'guest'
+}
+
+export function loadStore() {
   try {
     const raw = localStorage.getItem(KEY)
-    return raw ? JSON.parse(raw) : []
+    if (raw) return JSON.parse(raw)
   } catch {
-    return []
+    /* fall through */
   }
+  try {
+    const old = localStorage.getItem(OLD_KEY)
+    if (old) {
+      const visits = JSON.parse(old)
+      return {
+        ...emptyStore(),
+        historyByProfile: { guest: Array.isArray(visits) ? visits : [] },
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return emptyStore()
 }
 
-export function saveHistory(visits) {
-  localStorage.setItem(KEY, JSON.stringify(visits))
+export function saveStore(store) {
+  localStorage.setItem(KEY, JSON.stringify(store))
 }
 
-export function clearHistory() {
+export function loadHistory(profileId) {
+  const store = loadStore()
+  return store.historyByProfile[historyKey(profileId)] || []
+}
+
+export function saveHistory(profileId, visits) {
+  const store = loadStore()
+  store.historyByProfile[historyKey(profileId)] = visits
+  saveStore(store)
+}
+
+export function clearAll() {
   localStorage.removeItem(KEY)
+  localStorage.removeItem(OLD_KEY)
 }
