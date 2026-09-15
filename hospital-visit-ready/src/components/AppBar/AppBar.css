@@ -34,26 +34,12 @@
 }
 
 .hamburger-icon {
-  position: relative;
+  display: block;
   width: 24px;
   height: 24px;
+  color: var(--c-text);
+  flex-shrink: 0;
 }
-
-.hamburger-icon::before,
-.hamburger-icon::after,
-.hamburger-icon {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--c-text);
-  border-radius: 1px;
-}
-
-.hamburger-icon { top: 11px; }
-.hamburger-icon::before { top: 4px; }
-.hamburger-icon::after { top: 18px; }
 
 /* --- 중앙: 로고 + 제목 --- */
 .appbar-center {

@@ -69,9 +69,8 @@ export default function InputBar({
               strokeLinejoin="round"
               aria-hidden="true"
             >
-              <path d="M3 7v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2" />
-              <path d="M3 7l9 6 9-6" />
-              <circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.75" />
+              <path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+              <circle cx="12" cy="14" r="3.25" />
             </svg>
           </button>
         </div>
