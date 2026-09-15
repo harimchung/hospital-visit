@@ -31,12 +31,13 @@ export default function InputBar({
   pillMode = false,
   onCameraClick,
 }) {
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      onSend?.(value)
-    }
+const handleKeyDown = (e) => {
+  if (e.nativeEvent.isComposing || e.keyCode === 229) return
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    onSend?.(value)
   }
+}
 
   return (
     <div

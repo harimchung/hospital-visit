@@ -27,6 +27,7 @@ export const COPY = {
   'drawer.new': '+ 새 진료 준비',
   'drawer.clear': '기록 전부 지우기',
   'drawer.clear.confirm': '이 브라우저의 프로필, 사진, 메모를 전부 지워요. 되돌릴 수 없어요.',
+  'where.hint': '칩을 고르거나, 직접 말해도 돼요',
   'drawer.section.visits': '지난 진료',
   'drawer.profile.empty': '프로필이 없어요',
   'drawer.visits.empty': '지난 진료 기록이 없어요.',

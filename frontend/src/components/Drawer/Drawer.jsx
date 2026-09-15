@@ -46,9 +46,9 @@ export default function Drawer({
   onNewVisit,
   onClearAll,
   hasActiveVisit = false,
+  currentVisitId,
+  onAddProfile,
 }) {
-  if (!open) return null
-
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose?.()
@@ -56,26 +56,23 @@ export default function Drawer({
   }
 
   const handleNewVisitClick = () => {
-    if (hasActiveVisit) {
-      // 확인 시트에서 처리 (상위 컴포넌트에서 관리)
-      onNewVisit?.(true)
-    } else {
-      onClose?.()
-      onNewVisit?.(false)
-    }
+    onNewVisit?.()
   }
 
   return (
     <>
       {/* 스크림 — 탭하면 닫힘 */}
       <div
-        className="drawer-overlay"
+        className={`drawer-overlay ${open ? 'is-open' : ''}`}
         onClick={handleOverlayClick}
         aria-hidden="true"
       />
 
       {/* 드로어 패널 */}
-      <aside className="drawer" role="dialog" aria-label="진료 기록" aria-modal="true">
+      <aside
+        className={`drawer ${open ? 'is-open' : ''}`}
+        aria-label="진료 기록"
+      >
         {/* 헤더 */}
         <header className="drawer-header">
           <div className="drawer-header-text">
@@ -109,7 +106,13 @@ export default function Drawer({
           {/* 프로필 */}
           <ul className="profile-list">
             {profiles.length === 0 ? (
-              <li style={{ padding: '12px 0', textAlign: 'center', color: 'var(--c-text-3)' }}>
+              <li
+                style={{
+                  padding: '12px 0',
+                  textAlign: 'center',
+                  color: 'var(--c-text-3)',
+                }}
+              >
                 {t('drawer.profile.empty')}
               </li>
             ) : (
@@ -128,7 +131,7 @@ export default function Drawer({
                   }}
                 >
                   <span>
-                    <span className="profile-name">{profile.name}</span>
+                    <span className="profile-name">{profile.nickname}</span>
                     <span className="profile-age">({profile.age})</span>
                   </span>
                 </li>
@@ -139,9 +142,7 @@ export default function Drawer({
           <button
             type="button"
             className="profile-add-btn"
-            onClick={() => {
-              // TODO: 프로필 추가 모달
-            }}
+            onClick={() => onAddProfile?.()}
           >
             + 프로필 추가
           </button>
@@ -149,12 +150,14 @@ export default function Drawer({
           {/* 지난 진료 */}
           {visits.length > 0 ? (
             <>
-              <h3 className="drawer-section-title">{t('drawer.section.visits')}</h3>
+              <h3 className="drawer-section-title">
+                {t('drawer.section.visits')}
+              </h3>
               <ul className="visit-list">
                 {visits.map((visit) => (
                   <li
                     key={visit.id}
-                    className="visit-item"
+                    className={`visit-item ${visit.id === currentVisitId ? 'is-active' : ''}`}
                     onClick={() => onOpenVisit?.(visit.id)}
                     role="button"
                     tabIndex={0}
@@ -175,7 +178,13 @@ export default function Drawer({
               </ul>
             </>
           ) : (
-            <p style={{ padding: '12px 0', textAlign: 'center', color: 'var(--c-text-3)' }}>
+            <p
+              style={{
+                padding: '12px 0',
+                textAlign: 'center',
+                color: 'var(--c-text-3)',
+              }}
+            >
               {t('drawer.visits.empty')}
             </p>
           )}
@@ -205,6 +214,7 @@ export default function Drawer({
 
 function formatVisitDate(iso) {
   if (!iso) return ''
-  const d = new Date(iso)
-  return `${d.getMonth() + 1}/${d.getDate()}`
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`
 }
