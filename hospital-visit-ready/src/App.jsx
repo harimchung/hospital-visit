@@ -44,6 +44,7 @@ const PART_LABEL = {
 
 const emptyVisit = () => ({
   id: crypto.randomUUID(),
+  createdAt: new Date().toISOString(),
   part: null,
   photos: [],
   result: null,
@@ -90,6 +91,7 @@ function App() {
     photos: [],
     result: null,
     emergency: null,
+    createdAt: new Date().toISOString()
   })
 
   // 메시지 누적 배열 — 앱 화면의 실제 대화 기록
@@ -257,8 +259,22 @@ function App() {
 }
 
 const handleOpenVisit = (id) => {
+  if (id === visit.id) {
+    setIsReadOnly(false)
+    setSidebarOpen(false)
+    return
+  }
+
   const session = history.find((h) => h.id === id)
   if (!session) return
+
+  if (messages.length > 0) {
+    const saved = snapshotSession(visit, messages, step)
+    const next = [saved, ...history.filter((h) => h.id !== saved.id)]
+    setHistory(next)
+    saveHistory(next)
+  }
+
   setVisit(session.visit)
   setMessages(
     (session.messages || []).map((m) => ({
@@ -363,6 +379,19 @@ function snapshotSession(visit, messages, step) {
     step,
   }
 }
+
+const currentSession =
+  messages.length > 0
+    ? {
+        ...snapshotSession(visit, messages, step),
+        createdAt: visit.createdAt || new Date().toISOString(),
+        status: 'active',
+        summary: '작성 중',
+      }
+    : null
+const drawerVisits = currentSession
+  ? [currentSession, ...history.filter((h) => h.id !== currentSession.id)]
+  : history
 
   return (
     <div className="app-shell">
@@ -491,7 +520,7 @@ function snapshotSession(visit, messages, step) {
         <Drawer
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          visits={history}
+          visits={drawerVisits}
           onOpenVisit={handleOpenVisit}
           onNewVisit={() => {
             if (messages.length > 0) setConfirmVisible('new')
