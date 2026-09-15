@@ -111,6 +111,21 @@ body {
   align-items: flex-start;
 }
 
+
+/* App.css */
+.composer {
+  display: flex;
+  flex-direction: column;
+  background: var(--c-bg);
+}
+
+.chip-tray-dock {
+  padding: var(--sp-2) var(--sp-3) 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
 /* ================================================================
    말풍선 등장 모션 (2.4) — 컴포넌트 CSS와 키프레임 공유
    ================================================================ */

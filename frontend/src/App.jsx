@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { t } from './copy'
 import {
   loadStore,
@@ -7,6 +7,8 @@ import {
   saveHistory,
   clearAll,
 } from './storage'
+import { sendChatMessage, toApiHistory } from './api/chat'
+import { pickInitialWhereChips } from './initialChips'
 
 import './App.css'
 import './tokens.css'
@@ -41,13 +43,33 @@ const STEPS = {
 
 const PART_LABEL = {
   head: '머리',
-  face_neck: '눈·귀·코·목',
+  eye: '눈',
+  ear: '귀',
+  neck: '목',
+  nose: '코',
   chest: '가슴',
   abdomen: '배',
-  back_joint: '허리·관절',
+  waist: '허리',
+  knee: '무릎',
   skin: '피부',
-  other: '그 외',
-  multiple: '여러 군데',
+}
+
+function createOpeningMessages() {
+  return [makeMessage('agent', { body: t('where.ask'), hint: t('where.hint') })]
+}
+
+function getInitialChipWidth() {
+  if (typeof window === 'undefined') return 320
+  return Math.max(200, window.innerWidth - 48)
+}
+
+/** 같은 id는 내용만 갱신하고, 목록은 createdAt 최신순 유지 */
+function upsertHistory(list, session) {
+  const next = [...list.filter((h) => h.id !== session.id), session]
+  next.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )
+  return next
 }
 
 const emptyVisit = () => ({
@@ -80,10 +102,12 @@ function App() {
   const [selectedProfileId, setSelectedProfileId] = useState(null)
   const [history, setHistory] = useState(() => loadHistory(null))
   const [profileFormOpen, setProfileFormOpen] = useState(false)
-  const [messages, setMessages] = useState([])
-  const [isReadOnly, setIsReadOnly] = useState(false)
+  const [messages, setMessages] = useState(() => createOpeningMessages())
   const [step, setStep] = useState(STEPS.WHERE)
-  const [chipTrayVisible, setChipTrayVisible] = useState(true)
+  const [chips, setChips] = useState(() =>
+    pickInitialWhereChips(getInitialChipWidth()),
+  )
+  const [isSending, setIsSending] = useState(false)
   const [input, setInput] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [confirmVisible, setConfirmVisible] = useState(null)
@@ -91,103 +115,117 @@ function App() {
   const messagesRef = useRef(null)
   const fileInputRef = useRef(null)
   const chatEndRef = useRef(null)
+  const composerRef = useRef(null)
 
   // 메시지가 쌓일 때마다 말풍선 맨 아래로 스크롤
   useEffect(() => {
     messagesRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // S1 where 칩 세트 (design.md 참고)
-  const whereChips = [
-    { id: 'head', label: '머리' },
-    { id: 'face_neck', label: '눈·귀·코·목' },
-    { id: 'chest', label: '가슴' },
-    { id: 'abdomen', label: '배' },
-    { id: 'back_joint', label: '허리·관절' },
-    { id: 'skin', label: '피부' },
-    { id: 'other', label: '그 외' },
-    { id: 'multiple', label: '여러 군데', isEscape: true },
-  ]
-
-  const showChips = step === STEPS.WHERE && chipTrayVisible && !visit.emergency
-
-  // 에이전트 말풍선을 기록에 추가
-  const addAgent = useCallback((body, hint) => {
-    setMessages((prev) => [...prev, makeMessage('agent', { body, hint })])
+  const measureChipAreaWidth = useCallback(() => {
+    const el = composerRef.current
+    if (!el) return getInitialChipWidth()
+    const styles = window.getComputedStyle(el)
+    const pad =
+      (parseFloat(styles.paddingLeft) || 0) +
+      (parseFloat(styles.paddingRight) || 0)
+    // chip-tray-dock 좌우 패딩(sp-3 = 12) 반영
+    return Math.max(120, el.clientWidth - pad - 24)
   }, [])
 
-  // 칩 선택 처리
-  const handleChipSelect = useCallback(
-    (chip) => {
-      if (!chip || !!visit.emergency) return
+  const resetInitialChips = useCallback(() => {
+    setChips(pickInitialWhereChips(measureChipAreaWidth()))
+  }, [measureChipAreaWidth])
 
-      // 칩 자체도 사용자 발언으로 기록에 남긴다 (대화 유지)
-      setMessages((prev) => [
-        ...prev,
-        makeMessage('user', { text: chip.label }),
-      ])
+  // 셸 실제 너비로 초기 부위 칩을 한 줄에 맞게 다시 배치
+  useLayoutEffect(() => {
+    resetInitialChips()
+  }, [resetInitialChips])
 
-      if (chip.id === 'multiple') {
-        setChipTrayVisible(false)
-        setStep(STEPS.PHOTO)
-        addAgent('어디부터요? 하나씩 골라요')
-        return
-      }
+  const showChips = chips.length > 0 && !visit.emergency && !isSending
 
-      setVisit((v) => ({ ...v, part: chip.id }))
-      setChipTrayVisible(false)
-      setStep(STEPS.PHOTO)
-      addAgent(<p>{t('photo.ask')}</p>)
-    },
-    [visit.emergency, addAgent],
-  )
-
-  // 자유입력 처리 (부위 키워드 매칭)
-  const handleSendText = useCallback(() => {
-    const text = input.trim()
-    if (!text || !!visit.emergency) return
-
-    // 입력값은 전송 시점에만 사용자 말풍선으로 기록 (타이핑 중에는 띄우지 않음)
-    setMessages((prev) => [...prev, makeMessage('user', { text })])
-
-    if (step === STEPS.WHERE) {
-      const matched = matchBodyPart(text)
-      if (matched) {
-        setVisit((v) => ({ ...v, part: matched }))
-        setChipTrayVisible(false)
-        setStep(STEPS.PHOTO)
-        addAgent(t('photo.ask'))
-        setInput('')
-        return
-      }
-      // 매칭 실패 → 한 번 되묻기
-      setInput('')
-      addAgent('어디 근처예요?', t('where.hint'))
+  const applyAssistantResponse = useCallback((data) => {
+    if (data.emergency) {
+      setVisit((v) => ({ ...v, emergency: data.emergency }))
+      setChips([])
       return
     }
 
-    setInput('')
-  }, [step, visit.emergency, input, addAgent])
-
-  function matchBodyPart(text) {
-    const map = [
-      [/머리|두통|머리가|머리쪽|이마/, 'head'],
-      [/눈|시력|눈이|시야가|시린|눈쪽/, 'face_neck'],
-      [/귀|코|목|인후|편도|목이|코쪽|귀쪽|목쪽/, 'face_neck'],
-      [/가슴|흉통|흉부|명치|심장|가슴쪽|가슴이/, 'chest'],
-      [/배|복부|아랫배|윗배|배쪽|속이/, 'abdomen'],
-      [
-        /허리|관절|무릎|어깨|손목|발목|허리쪽|관절쪽|팔|다리|허리/,
-        'back_joint',
-      ],
-      [/피부|살|살쪽|몸|피부쪽|두드러기|발진/, 'skin'],
-      [/여러 군데|여러곳|여기저기|전신/, 'other'],
-    ]
-    for (const [pattern, id] of map) {
-      if (pattern.test(text)) return id
+    setMessages((prev) => [
+      ...prev,
+      makeMessage('agent', {
+        body: data.reply,
+        hint: data.hint ?? null,
+      }),
+    ])
+    // 초기 부위 칩 이후에는 백엔드 chips만 사용 (없으면 숨김)
+    setChips(Array.isArray(data.chips) ? data.chips : [])
+    if (data.result) {
+      setVisit((v) => ({ ...v, result: data.result }))
+      setStep(STEPS.RESULT)
     }
-    return 'other'
-  }
+  }, [])
+
+  const sendUserTurn = useCallback(
+    async (text) => {
+      if (!text || isSending || !!visit.emergency) return
+
+      setMessages((prev) => [...prev, makeMessage('user', { text })])
+      setChips([])
+      setIsSending(true)
+
+      try {
+        const historyPayload = toApiHistory([
+          ...messages,
+          { type: 'user', text },
+        ])
+        const data = await sendChatMessage({
+          sessionId: visit.id,
+          profileId: selectedProfileId,
+          message: text,
+          history: historyPayload,
+        })
+        applyAssistantResponse(data)
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          makeMessage('agent', {
+            body: '잠시 연결이 안 돼요. 다시 보내 줄래요?',
+            hint: null,
+          }),
+        ])
+      } finally {
+        setIsSending(false)
+      }
+    },
+    [
+      applyAssistantResponse,
+      isSending,
+      messages,
+      selectedProfileId,
+      visit.emergency,
+      visit.id,
+    ],
+  )
+
+  // 칩 선택 → 사용자 메시지로 보내고 백엔드 응답 칩으로 교체
+  const handleChipSelect = useCallback(
+    (chip) => {
+      if (!chip || !!visit.emergency || isSending) return
+      if (chip.id) {
+        setVisit((v) => ({ ...v, part: chip.id }))
+      }
+      sendUserTurn(chip.label)
+    },
+    [isSending, sendUserTurn, visit.emergency],
+  )
+
+  const handleSendText = useCallback(() => {
+    const text = input.trim()
+    if (!text) return
+    setInput('')
+    sendUserTurn(text)
+  }, [input, sendUserTurn])
 
   // 사진 선택 (InputBar 연동용)
   const handlePhotoSelect = useCallback(
@@ -208,17 +246,15 @@ function App() {
         ...v,
         photos: [...v.photos, photo],
       }))
-      // 사용자 사진 말풍선을 기록에 추가
       setMessages((prev) => [
         ...prev,
         makeMessage('user', { text: label, photo: { src, caption: label } }),
+        makeMessage('agent', { body: t('photo.saved') }),
       ])
-      // 저장 안내 에이전트 말풍선 추가
-      addAgent(t('photo.saved'))
 
       e.target.value = ''
     },
-    [addAgent],
+    [],
   )
 
   const triggerPhotoInput = () => {
@@ -230,22 +266,22 @@ function App() {
     setConfirmVisible(null)
     if (messages.length > 0) {
       const session = snapshotSession(visit, messages, step)
-      const next = [session, ...history.filter((h) => h.id !== session.id)]
+      const next = upsertHistory(history, session)
       setHistory(next)
       saveHistory(selectedProfileId, next)
     }
     setVisit(emptyVisit())
-    setMessages([])
+    setMessages(createOpeningMessages())
     setStep(STEPS.WHERE)
-    setChipTrayVisible(true)
     setInput('')
-    setIsReadOnly(false)
     setSidebarOpen(false)
+    setIsSending(false)
+    // 초기 부위 칩을 화면 너비 기준으로 다시 랜덤 배치
+    resetInitialChips()
   }
 
   const handleOpenVisit = (id) => {
     if (id === visit.id) {
-      setIsReadOnly(false)
       setSidebarOpen(false)
       return
     }
@@ -253,14 +289,20 @@ function App() {
     const session = history.find((h) => h.id === id)
     if (!session) return
 
+    // 진행 중 대화만 저장. 순서는 createdAt 기준으로 유지 (맨 위로 끌어올리지 않음)
+    let nextHistory = history
     if (messages.length > 0) {
       const saved = snapshotSession(visit, messages, step)
-      const next = [saved, ...history.filter((h) => h.id !== saved.id)]
-      setHistory(next)
-      saveHistory(selectedProfileId, next)
+      nextHistory = upsertHistory(history, saved)
+      setHistory(nextHistory)
+      saveHistory(selectedProfileId, nextHistory)
     }
 
-    setVisit(session.visit)
+    setVisit({
+      ...session.visit,
+      // 생성 시각은 히스토리 순서를 위해 보존
+      createdAt: session.createdAt || session.visit?.createdAt,
+    })
     setMessages(
       (session.messages || []).map((m) => ({
         ...m,
@@ -268,9 +310,8 @@ function App() {
       })),
     )
     setStep(session.step || STEPS.WHERE)
-    setChipTrayVisible(false)
+    setChips([])
     setInput('')
-    setIsReadOnly(true)
     setSidebarOpen(false)
   }
 
@@ -279,10 +320,10 @@ function App() {
     clearAll()
     setHistory([])
     setVisit(emptyVisit())
-    setMessages([])
+    setMessages(createOpeningMessages())
     setStep(STEPS.WHERE)
-    setChipTrayVisible(true)
-    setIsReadOnly(false)
+    setIsSending(false)
+    resetInitialChips()
   }
 
   const handleAddProfile = (profile) => {
@@ -308,7 +349,7 @@ function App() {
     if (messages.length > 0) {
       const saved = snapshotSession(visit, messages, step)
       saved.profileId = selectedProfileId
-      const next = [saved, ...history.filter((h) => h.id !== saved.id)]
+      const next = upsertHistory(history, saved)
       setHistory(next)
       saveHistory(selectedProfileId, next)
     }
@@ -320,11 +361,11 @@ function App() {
 
     setHistory(loadHistory(id))
     setVisit(emptyVisit())
-    setMessages([])
+    setMessages(createOpeningMessages())
     setStep(STEPS.WHERE)
-    setChipTrayVisible(true)
-    setIsReadOnly(false)
+    setIsSending(false)
     setInput('')
+    resetInitialChips()
   }
 
   // 응급 판정 (design.md S9 키워드 표 참고)
@@ -398,7 +439,8 @@ function App() {
     const firstUser = plainMessages.find((m) => m.type === 'user' && m.text)
     return {
       id: visit.id,
-      createdAt: new Date().toISOString(),
+      // 열람/저장할 때마다 시각을 바꾸지 않아 목록 순서가 유지된다
+      createdAt: visit.createdAt || new Date().toISOString(),
       title: PART_LABEL[visit.part] || firstUser?.text || '진료 준비',
       summary: `대화 ${plainMessages.length}개`,
       visit: {
@@ -407,6 +449,7 @@ function App() {
         photos: [],
         result: visit.result,
         emergency: visit.emergency,
+        createdAt: visit.createdAt,
       },
       messages: plainMessages,
       step,
@@ -418,13 +461,13 @@ function App() {
     messages.length > 0
       ? {
           ...snapshotSession(visit, messages, step),
-          createdAt: visit.createdAt || new Date().toISOString(),
           status: 'active',
           summary: '작성 중',
         }
       : null
+  // 현재 세션을 맨 위에 올리지 않고, 생성 시각 순서 그대로 합친다
   const drawerVisits = currentSession
-    ? [currentSession, ...history.filter((h) => h.id !== currentSession.id)]
+    ? upsertHistory(history, currentSession)
     : history
 
   const selectedProfile = profiles.find(
@@ -542,7 +585,7 @@ function App() {
               {messages.map((msg) =>
                 msg.type === 'agent' ? (
                   <AgentBubble key={msg.id} hint={msg.hint}>
-                    {typeof msg.body === 'string' ? msg.body : ''}
+                    {msg.body}
                   </AgentBubble>
                 ) : (
                   <UserBubble key={msg.id} photo={msg.photo}>
@@ -551,11 +594,6 @@ function App() {
                 ),
               )}
             </>
-          )}
-
-          {/* 칩 트레이 (S1) */}
-          {showChips && !isReadOnly && (
-            <ChipTray chips={whereChips} onSelect={handleChipSelect} />
           )}
 
           <div ref={chatEndRef} />
@@ -571,17 +609,24 @@ function App() {
           style={{ display: 'none' }}
           onChange={handlePhotoSelect}
         />
+        <div className="composer" ref={composerRef}>
+          {showChips && (
+            <div className="chip-tray-dock">
+              <ChipTray chips={chips} onSelect={handleChipSelect} />
+            </div>
+          )}
 
-        {/* ===== C7 InputBar ===== */}
-        <InputBar
-          value={input}
-          onChange={setInput}
-          onSend={handleSendText}
-          placeholder={t('input.placeholder')}
-          hasCamera={!isEmergency}
-          disabled={isEmergency || isReadOnly}
-          onCameraClick={triggerPhotoInput}
-        />
+          {/* ===== C7 InputBar ===== */}
+          <InputBar
+            value={input}
+            onChange={setInput}
+            onSend={handleSendText}
+            placeholder={t('input.placeholder')}
+            hasCamera={!isEmergency}
+            disabled={isEmergency || isSending}
+            onCameraClick={triggerPhotoInput}
+          />
+        </div>
       </main>
 
       {/* ===== ConfirmDialog ===== */}

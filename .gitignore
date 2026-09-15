@@ -47,6 +47,7 @@ credentials.json
 
 # Hermes MCP tokens (never commit)
 .hermes/mcp-tokens/
+.hermes/config.yaml
 
 # Logs
 *.log

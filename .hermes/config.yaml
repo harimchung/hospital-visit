@@ -9,4 +9,4 @@ mcp_servers:
     auth: oauth
     enabled: true
 terminal:
-  cwd: /Users/chungharim/mabc/hospital-visit-ready
+  cwd: /Users/chungharim/mabc/frontend
