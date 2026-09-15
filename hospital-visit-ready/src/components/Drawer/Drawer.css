@@ -8,12 +8,26 @@
   inset: 0;
   background: rgba(23, 35, 43, 0.45);
   z-index: 50;
-  animation: overlay-fade 200ms ease-out;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 200ms ease-out,
+    visibility 200ms ease-out;
+}
+.drawer-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 @keyframes overlay-fade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .drawer {
@@ -23,17 +37,23 @@
   bottom: 0;
   width: min(72%, 400px);
   max-width: 400px;
-  background: var(--c-surface);
-  z-index: 60;
   display: flex;
   flex-direction: column;
-  animation: drawer-slide 200ms ease-out;
+  background: var(--c-surface);
   box-shadow: 0 4px 24px rgba(23, 35, 43, 0.12);
+  z-index: 60;
+  transform: translateX(-100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 200ms ease-out,
+    visibility 200ms ease-out;
 }
 
-@keyframes drawer-slide {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
+.drawer.is-open {
+  transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
 }
 
 /* --- 헤더 --- */
@@ -125,8 +145,7 @@
   width: 100%;
   text-align: left;
   font-family: var(--font);
-  transition:
-    background-color 120ms ease;
+  transition: background-color 120ms ease;
 }
 
 .profile-item:last-child {
@@ -184,17 +203,19 @@
 .visit-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-btn);
-  margin-bottom: var(--sp-1);
-  cursor: pointer;
-  border: none;
-  background: var(--c-primary-tint);  width: 100%;
+  gap: 3px;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  background: var(--c-surface);
   text-align: left;
   font-family: var(--font);
+  cursor: pointer;
   transition:
-    background-color 120ms ease;
+    background-color 120ms ease,
+    border-color 120ms ease;
 }
 
 .visit-item:last-child {
@@ -203,6 +224,12 @@
 
 .visit-item:hover {
   background: var(--c-primary-tint);
+  border-color: var(--c-border-strong);
+}
+
+.visit-item.is-active {
+  background: var(--c-primary-tint);
+  border-color: var(--c-primary);
 }
 
 .visit-item-date {
@@ -242,8 +269,7 @@
   font-weight: 500;
   line-height: var(--lh);
   cursor: pointer;
-  transition:
-    background-color 120ms ease;
+  transition: background-color 120ms ease;
 }
 
 .profile-add-btn:hover {
@@ -280,8 +306,7 @@
   font-weight: 500;
   line-height: var(--lh);
   cursor: pointer;
-  transition:
-    background-color 120ms ease;
+  transition: background-color 120ms ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -308,8 +333,7 @@
   line-height: var(--lh);
   text-align: center;
   cursor: pointer;
-  transition:
-    color 120ms ease;
+  transition: color 120ms ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -333,7 +357,6 @@
   align-items: center;
   justify-content: center;
   padding: var(--sp-4);
-  animation: overlay-fade 200ms ease-out;
 }
 
 .confirm-sheet {
@@ -383,8 +406,7 @@
   font-weight: 500;
   line-height: var(--lh);
   cursor: pointer;
-  transition:
-    background-color 120ms ease;
+  transition: background-color 120ms ease;
 }
 
 .confirm-secondary:hover {
@@ -408,8 +430,7 @@
   font-weight: 600;
   line-height: var(--lh);
   cursor: pointer;
-  transition:
-    background-color 120ms ease;
+  transition: background-color 120ms ease;
 }
 
 .confirm-danger:hover {
@@ -419,4 +440,32 @@
 .confirm-danger:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--c-danger);
+}
+
+@media (min-width: 1024px) {
+  .drawer-overlay {
+    display: none;
+  }
+
+  .drawer {
+    position: sticky;
+    top: 0;
+    bottom: auto;
+
+    width: 320px;
+    max-width: none;
+    height: 100dvh;
+
+    transform: none;
+    visibility: visible;
+    pointer-events: auto;
+
+    z-index: auto;
+    box-shadow: none;
+    border-right: 1px solid var(--c-border);
+  }
+
+  .drawer-close-btn {
+    display: none;
+  }
 }

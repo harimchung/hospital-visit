@@ -21,7 +21,7 @@ import './AppBar.css'
 export default function AppBar({
   onHamburger,
   onProfile,
-  rightLabel = '프로필',
+  rightLabel = '프로필 설정',
   mode = 'default',
 }) {
   const handleHamburger = (e) => {
@@ -44,19 +44,19 @@ export default function AppBar({
         onClick={handleHamburger}
         tabIndex={0}
       >
-      <svg
-      className="hamburger-icon"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-  <path d="M4 7h16M4 12h16M4 17h16" />
-</svg>
+        <svg
+          className="hamburger-icon"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
       </button>
 
       {/* --- 중앙: 제목 + 로고 --- */}
@@ -77,7 +77,7 @@ export default function AppBar({
           type="button"
           className="appbar-right-btn"
           onClick={handleProfile}
-          aria-label={mode === 'search' ? '패널 닫기' : '진료 기록 열기'}
+          aria-label={mode === 'search' ? '패널 닫기' : '프로필 설정 열기'}
         >
           {mode === 'search' ? '✕' : rightLabel}
         </button>

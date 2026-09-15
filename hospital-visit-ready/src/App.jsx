@@ -459,156 +459,162 @@ function App() {
     ? [currentSession, ...history.filter((h) => h.id !== currentSession.id)]
     : history
 
+  const selectedProfile = profiles.find(
+    (profile) => profile.id === selectedProfileId,
+  )
+
   return (
-    <div className="app-shell">
-      {/* ===== C1 AppBar ===== */}
-      <AppBar
-        onHamburger={() => setSidebarOpen(true)}
-        onProfile={() => setSidebarOpen(true)}
-        rightLabel={sidebarOpen ? '닫기' : '프로필'}
-        mode={sidebarOpen ? 'search' : 'default'}
+    <div className="app-layout">
+      <Drawer
+        profiles={profiles}
+        selectedProfileId={selectedProfileId}
+        onSelectProfile={handleSelectProfile}
+        onAddProfile={() => setProfileFormOpen(true)}
+        visits={drawerVisits}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onOpenVisit={handleOpenVisit}
+        onNewVisit={() => {
+          if (messages.length > 0) setConfirmVisible('new')
+          else handleNewStart()
+        }}
+        onClearAll={() => setConfirmVisible('clear')}
+        hasActiveVisit={messages.length > 0}
+        currentVisitId={visit.id}
       />
-
-      {/* ===== 메시지 영역 ===== */}
-      <div className="messages" ref={messagesRef}>
-        {/* 진행 상태 표시 (원칙 9) */}
-        {false && (
-          <div className="progress-indicator" role="status" aria-live="polite">
-            <span className="progress-dot" aria-hidden="true" />
-            {t('questions.hint')}
-          </div>
-        )}
-
-        {/* S9 응급 카드 */}
-        {isEmergency && visit.emergency && (
-          <Card variant="danger">
-            <div className="c-card__danger-title" style={{ margin: 0 }}>
-              {t('emergency.title')}
-            </div>
-            <p className="c-card__body">
-              {t('emergency.body', {
-                signal: visit.emergency.signal,
-                cond: visit.emergency.cond,
-              })}
-            </p>
-            <a
-              href="tel:119"
-              className="emergency-cta"
-              onClick={(e) => e.preventDefault()}
-            >
-              {t('emergency.cta')}
-            </a>
-            <p className="c-card__hint" style={{ marginTop: '12px' }}>
-              응급 신호 10개 중 하나라도 걸리면 이 화면만 나와요.
-            </p>
-            <div className="emergency-signal-list">
-              {emergencySignals.map((s) => (
-                <span key={s.id} className="emergency-signal-tag">
-                  {s.label}
-                </span>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* S8 결과 카드 (현재는 조건 충족 시만 렌더) */}
-        {isResult && visit.result && (
-          <Card>
-            <div style={{ padding: '16px' }}>
-              <p style={{ margin: '0 0 8px', fontWeight: 600 }}>
-                어느 과로 갈까요
-              </p>
-              <p
-                style={{
-                  margin: '0 0 12px',
-                  color: 'var(--c-text-2)',
-                  fontSize: '12px',
-                }}
-              >
-                {t('result.dept.note')}
-              </p>
-              <p style={{ margin: '0 0 12px' }}>진료실에서 이렇게 말해요</p>
-              <p style={{ margin: '0 0 12px' }}>꼭 물어볼 세 가지</p>
-              <div className="c-card__actions">
-                <Button kind="primary">복사</Button>
-                <Button kind="secondary">PDF로 저장</Button>
-              </div>
-              <textarea
-                className="c-card__textarea"
-                placeholder={t('result.note.placeholder')}
-                style={{ marginTop: '12px' }}
-              />
-            </div>
-          </Card>
-        )}
-
-        {/* 일반 메시지 흐름 — 기록 기반 렌더 */}
-        {!isEmergency && !isResult && (
-          <>
-            {messages.map((msg) =>
-              msg.type === 'agent' ? (
-                <AgentBubble key={msg.id} hint={msg.hint}>
-                  {typeof msg.body === 'string' ? msg.body : ''}
-                </AgentBubble>
-              ) : (
-                <UserBubble key={msg.id} photo={msg.photo}>
-                  {msg.text ?? ''}
-                </UserBubble>
-              ),
-            )}
-          </>
-        )}
-
-        {/* 칩 트레이 (S1) */}
-        {showChips && !isReadOnly && (
-          <ChipTray chips={whereChips} onSelect={handleChipSelect} />
-        )}
-
-        <div ref={chatEndRef} />
-      </div>
-
-      {/* 숨겨진 파일 입력 */}
-      <input
-        ref={fileInputRef}
-        id="camera-input"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: 'none' }}
-        onChange={handlePhotoSelect}
-      />
-
-      {/* ===== C7 InputBar ===== */}
-      <InputBar
-        value={input}
-        onChange={setInput}
-        onSend={handleSendText}
-        placeholder={t('input.placeholder')}
-        hasCamera={!isEmergency}
-        disabled={isEmergency || isReadOnly}
-        onCameraClick={triggerPhotoInput}
-      />
-
-      {/* ===== C9 Drawer ===== */}
-      {sidebarOpen && (
-        <Drawer
-          profiles={profiles}
-          selectedProfileId={selectedProfileId}
-          onSelectProfile={handleSelectProfile}
-          onAddProfile={() => setProfileFormOpen(true)}
-          visits={drawerVisits}
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          onOpenVisit={handleOpenVisit}
-          onNewVisit={() => {
-            if (messages.length > 0) setConfirmVisible('new')
-            else handleNewStart()
-          }}
-          onClearAll={() => setConfirmVisible('clear')}
-          hasActiveVisit={messages.length > 0}
-          currentVisitId={visit.id}
+      <main className="app-shell">
+        {/* ===== C1 AppBar ===== */}
+        <AppBar
+          onHamburger={() => setSidebarOpen(true)}
+          onProfile={() => setSidebarOpen(true)}
+          rightLabel={selectedProfile?.nickname || '프로필 설정'}
+          mode="default"
         />
-      )}
+
+        {/* ===== 메시지 영역 ===== */}
+        <div className="messages" ref={messagesRef}>
+          {/* 진행 상태 표시 (원칙 9) */}
+          {false && (
+            <div
+              className="progress-indicator"
+              role="status"
+              aria-live="polite"
+            >
+              <span className="progress-dot" aria-hidden="true" />
+              {t('questions.hint')}
+            </div>
+          )}
+
+          {/* S9 응급 카드 */}
+          {isEmergency && visit.emergency && (
+            <Card variant="danger">
+              <div className="c-card__danger-title" style={{ margin: 0 }}>
+                {t('emergency.title')}
+              </div>
+              <p className="c-card__body">
+                {t('emergency.body', {
+                  signal: visit.emergency.signal,
+                  cond: visit.emergency.cond,
+                })}
+              </p>
+              <a
+                href="tel:119"
+                className="emergency-cta"
+                onClick={(e) => e.preventDefault()}
+              >
+                {t('emergency.cta')}
+              </a>
+              <p className="c-card__hint" style={{ marginTop: '12px' }}>
+                응급 신호 10개 중 하나라도 걸리면 이 화면만 나와요.
+              </p>
+              <div className="emergency-signal-list">
+                {emergencySignals.map((s) => (
+                  <span key={s.id} className="emergency-signal-tag">
+                    {s.label}
+                  </span>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* S8 결과 카드 (현재는 조건 충족 시만 렌더) */}
+          {isResult && visit.result && (
+            <Card>
+              <div style={{ padding: '16px' }}>
+                <p style={{ margin: '0 0 8px', fontWeight: 600 }}>
+                  어느 과로 갈까요
+                </p>
+                <p
+                  style={{
+                    margin: '0 0 12px',
+                    color: 'var(--c-text-2)',
+                    fontSize: '12px',
+                  }}
+                >
+                  {t('result.dept.note')}
+                </p>
+                <p style={{ margin: '0 0 12px' }}>진료실에서 이렇게 말해요</p>
+                <p style={{ margin: '0 0 12px' }}>꼭 물어볼 세 가지</p>
+                <div className="c-card__actions">
+                  <Button kind="primary">복사</Button>
+                  <Button kind="secondary">PDF로 저장</Button>
+                </div>
+                <textarea
+                  className="c-card__textarea"
+                  placeholder={t('result.note.placeholder')}
+                  style={{ marginTop: '12px' }}
+                />
+              </div>
+            </Card>
+          )}
+
+          {/* 일반 메시지 흐름 — 기록 기반 렌더 */}
+          {!isEmergency && !isResult && (
+            <>
+              {messages.map((msg) =>
+                msg.type === 'agent' ? (
+                  <AgentBubble key={msg.id} hint={msg.hint}>
+                    {typeof msg.body === 'string' ? msg.body : ''}
+                  </AgentBubble>
+                ) : (
+                  <UserBubble key={msg.id} photo={msg.photo}>
+                    {msg.text ?? ''}
+                  </UserBubble>
+                ),
+              )}
+            </>
+          )}
+
+          {/* 칩 트레이 (S1) */}
+          {showChips && !isReadOnly && (
+            <ChipTray chips={whereChips} onSelect={handleChipSelect} />
+          )}
+
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* 숨겨진 파일 입력 */}
+        <input
+          ref={fileInputRef}
+          id="camera-input"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          style={{ display: 'none' }}
+          onChange={handlePhotoSelect}
+        />
+
+        {/* ===== C7 InputBar ===== */}
+        <InputBar
+          value={input}
+          onChange={setInput}
+          onSend={handleSendText}
+          placeholder={t('input.placeholder')}
+          hasCamera={!isEmergency}
+          disabled={isEmergency || isReadOnly}
+          onCameraClick={triggerPhotoInput}
+        />
+      </main>
 
       {/* ===== ConfirmDialog ===== */}
       <ConfirmDialog

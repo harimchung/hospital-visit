@@ -49,8 +49,6 @@ export default function Drawer({
   currentVisitId,
   onAddProfile,
 }) {
-  if (!open) return null
-
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose?.()
@@ -65,17 +63,15 @@ export default function Drawer({
     <>
       {/* 스크림 — 탭하면 닫힘 */}
       <div
-        className="drawer-overlay"
+        className={`drawer-overlay ${open ? 'is-open' : ''}`}
         onClick={handleOverlayClick}
         aria-hidden="true"
       />
 
       {/* 드로어 패널 */}
       <aside
-        className="drawer"
-        role="dialog"
+        className={`drawer ${open ? 'is-open' : ''}`}
         aria-label="진료 기록"
-        aria-modal="true"
       >
         {/* 헤더 */}
         <header className="drawer-header">
@@ -218,6 +214,7 @@ export default function Drawer({
 
 function formatVisitDate(iso) {
   if (!iso) return ''
-  const d = new Date(iso)
-  return `${d.getMonth() + 1}/${d.getDate()}`
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`
 }
