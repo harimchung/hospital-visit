@@ -2,7 +2,7 @@
   "name": "hospital-visit",
   "private": true,
   "scripts": {
-    "ci-install": "cd hospital-visit-ready && npm install",
-    "build": "cd hospital-visit-ready && npm run build"
+    "ci-install": "cd frontend && npm install",
+    "build": "cd frontend && npm run build"
   }
 }
