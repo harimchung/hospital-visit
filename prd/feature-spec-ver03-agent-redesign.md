@@ -126,7 +126,7 @@
 | 키 이름 | 용도 | 발급처 |
 |---------|------|--------|
 | `UPSTAGE_API_KEY` | Solar Pro 4 호출(대본 생성·평가문·agent 지시문 응답) | Upstage Console |
-| `PUBLIC_DATA_API_KEY` | 공공데이터포털 인증키(e약은요·DUR·낱알식별 통합 1개) | 공공데이터포털 |
+| `DATA_API_KEY` | 공공데이터포털 인증키(e약은요·DUR·낱알식별 통합 1개) | 공공데이터포털 |
 | `SUPABASE_URL` | Supabase 프로젝트 연결 주소 | Supabase 대시보드 |
 | `SUPABASE_ANON_KEY` | /api에서 Supabase 클라이언트 인증용(RLS 적용) | Supabase 대시보드 |
 
