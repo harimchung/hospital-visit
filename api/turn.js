@@ -251,7 +251,14 @@ export async function POST(req) {
   const mergedState = parsed
     ? mergeState(state, parsed.state, askedField, user_text)
     : { ...state };
-  fillAskedField(mergedState, askedField, user_text);
+  // 이번 발화가 다른 칸으로 읽혔으면 같은 문장을 물었던 칸에 또 넣지 않는다.
+  // 칸을 건너뛴 다음 턴에 "복용한 약은 OO이에요" 같은 답이 해 본 것 칸에 박히는 걸 막는다
+  const prevState = body.state || {};
+  const readAsOtherField = STATE_FIELDS.some(
+    (f) =>
+      f !== askedField && !isFilled(prevState[f]) && isFilled(mergedState[f]),
+  );
+  fillAskedField(mergedState, askedField, user_text, readAsOtherField);
   const sum2 = summarizeState(mergedState);
   const allFilled = sum2.filled.length === STATE_FIELDS.length;
 
@@ -314,26 +321,41 @@ export async function POST(req) {
   }
 
   if (!allFilled) {
-    // 빈 칸이 남았으면 ask. 모델이 고른 칸을 존중하되, 같은 칸을 연달아 두 번 물으면 코드가 다음 빈 칸으로 넘긴다
-    const repeated = !!(
+    // 빈 칸이 남았으면 ask. 모델이 고른 칸을 존중하되, 직전에 물은 칸이 아직 비어 있으면
+    // 그 칸을 건너뛰고 다른 빈 칸으로 넘긴다. 넘길 칸이 없으면 어쩔 수 없이 한 번 더 묻는다
+    const stuckField =
+      askedField &&
+      STATE_FIELDS.includes(askedField) &&
+      !isFilled(mergedState[askedField])
+        ? askedField
+        : null;
+    const skipTo = stuckField
+      ? STATE_FIELDS.find(
+          (f) => f !== stuckField && !isFilled(mergedState[f]),
+        ) || null
+      : null;
+    const modelRepeats = !!(
       parsed &&
       parsed.next_field &&
-      parsed.next_field === askedField
+      parsed.next_field === stuckField
     );
     const useModel = !!(
       parsed &&
       parsed.next_field &&
       parsed.question &&
-      !repeated
+      !(modelRepeats && skipTo)
     );
-    const nextField = useModel ? parsed.next_field : sum2.next;
+    const nextField = useModel ? parsed.next_field : skipTo || sum2.next;
     let question = useModel
       ? parsed.question
       : `${FIELD_LABEL[nextField]}은 어떻게 돼요? 조금만 더 알려 주세요.`;
-    if (repeated) {
+    if (stuckField) {
       events.push({
         event: "review",
-        line: `같은 칸(${FIELD_LABEL[askedField]}) 재질문 감지, 다음 칸으로`,
+        line:
+          nextField === stuckField
+            ? `${FIELD_LABEL[stuckField]} 칸이 비어 있지만 남은 빈 칸이 이것뿐, 한 번 더 물음`
+            : `${FIELD_LABEL[stuckField]} 칸 재질문 피하고 ${FIELD_LABEL[nextField]}으로 넘김`,
         body: null,
         hint: null,
         tool: null,
@@ -730,13 +752,15 @@ function mergeState(existing, modelState, askedField, userText) {
   return merged;
 }
 
-// 이번 턴에 물었던 칸이 여전히 비어 있으면 사용자가 답한 문장을 그대로 넣는다. 탈출 칩은 없음 처리
-function fillAskedField(state, askedField, text) {
+// 이번 턴에 물었던 칸이 여전히 비어 있으면 사용자가 답한 문장을 그대로 넣는다. 탈출 칩은 없음 처리.
+// 그 문장이 이미 다른 칸으로 읽혔으면 넣지 않는다
+function fillAskedField(state, askedField, text, readAsOtherField = false) {
   if (!askedField || !STATE_FIELDS.includes(askedField)) return;
   if (isFilled(state[askedField])) return;
   const t = (text || "").trim();
   if (!t) return;
   if (wantsPillFinder(t)) return;
+  if (readAsOtherField) return;
   let value = t;
   const skip =
     /잘\s*모르|모르겠|몰라|기억\s*안|없어|없음|안\s*먹|안\s*했|아직 아무/.test(
