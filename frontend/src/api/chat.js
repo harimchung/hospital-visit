@@ -79,6 +79,7 @@ function fromBackendResponse(backend) {
   let hint = null;
   let chips = [];
   let uiAction = null;
+  let uiPayload = null;
 
   for (const ev of events) {
     if (ev.event === 'safety' && ev.payload?.signal) {
@@ -94,6 +95,7 @@ function fromBackendResponse(backend) {
     }
     if (ev.event === 'ui_action') {
       uiAction = ev.payload?.action ?? null;
+      uiPayload = ev.payload ?? null;
     }
   }
 
@@ -107,6 +109,7 @@ function fromBackendResponse(backend) {
     hint,
     chips,
     uiAction,
+    uiPayload,
   };
 }
 

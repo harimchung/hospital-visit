@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './PillFinderCard.css'
 
 const SHAPES = ['원형', '타원', '장방형', '삼각형', '사각형']
@@ -11,6 +12,22 @@ const COLORS = [
   ['초록', '#82bf99'],
   ['보라', '#a68bd1'],
 ]
+
+function CandidatePhoto({ src, alt }) {
+  const [failed, setFailed] = useState(false)
+  if (!src || failed) {
+    return <span className="pill-candidate-mark" aria-hidden="true" />
+  }
+  return (
+    <img
+      className="pill-candidate-photo"
+      src={src}
+      alt={alt || ''}
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  )
+}
 
 export default function PillFinderCard({
   value,
@@ -124,7 +141,7 @@ export default function PillFinderCard({
                 key={key}
                 className={`pill-candidate ${chosen ? 'is-selected' : ''}`}
               >
-                <span className="pill-candidate-mark" aria-hidden="true" />
+                <CandidatePhoto src={candidate.image} alt={candidate.name || ''} />
                 <div className="pill-candidate-info">
                   <strong>{candidate.name || '제품명 미상'}</strong>
                   <span>{candidate.maker || '제조사 정보 없음'}</span>

@@ -1,23 +1,7 @@
 // api/pill.js — POST /api/pill (패키지 없이, 내장 fetch)
 // 공공데이터포털 인증키 DATA_API_KEY 사용.
 
-const PILL_BASE = 'https://apis.data.go.kr/1471000';
-
-async function fetchWithKey(path, params) {
-  const url = new URL(PILL_BASE + path);
-  url.searchParams.set('serviceKey', process.env.DATA_API_KEY);
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
-  });
-  url.searchParams.set('type', 'json');
-  const res = await fetch(url.toString());
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    throw new Error(`공공데이터 호출 실패: ${res.status} ${txt}`);
-  }
-  const data = await res.json();
-  return data;
-}
+import { queryPillIdentify, fetchWithKey } from './_lib/tools.js';
 
 function getNested(data, ...keys) {
   let cur = data;
@@ -168,55 +152,9 @@ export async function POST(req) {
         break;
       }
       case 'pill_identify': {
-        const shapeMap = {
-          원형: '원형',
-          oval: '타원',
-          oblong: '장방형',
-          triangle: '삼각형',
-          square: '사각형',
-        };
-        const colorMap = {
-          하양: '하양',
-          흰색: '하양',
-          노랑: '노랑',
-          노랑색: '노랑',
-          주황: '주황',
-          주황색: '주황',
-          분홍: '분홍',
-          분홍색: '분홍',
-          빨강: '빨강',
-          빨간색: '빨강',
-          파랑: '파랑',
-          파란색: '파랑',
-          초록: '초록',
-          초록색: '초록',
-          보라: '보라',
-          보라색: '보라',
-        };
-        const shape = shapeMap[params.shape] || params.shape || '';
-        const color = colorMap[params.color] || params.color || '';
-        const imprint = params.imprint || '';
-        const data = await fetchWithKey(
-          '/PillIdentifyService02/getPillIdentifyList02',
-          {
-            shape: shape || undefined,
-            color: color || undefined,
-            imprint: imprint || undefined,
-            numOfRows: 5,
-            pageNo: 1,
-          }
-        );
-        const list = getNested(data, 'getPillIdentifyList02', 'itemList') || [];
-        const candidates = Array.isArray(list)
-          ? list.slice(0, 5).map((row) => ({
-              name: row.PILL_NAME || row.pillName || '',
-              maker: row.MAKER_NAME || row.makerName || '',
-              shape: row.SHAPE || row.shape || '',
-              color: row.COLOR || row.color || '',
-              imprint: row.IMPRINT || row.imprint || '',
-            }))
-          : [];
-        result = { candidates, count: candidates.length };
+        const out = await queryPillIdentify(params);
+        if (!out.ok) throw new Error(out.error || '낱알식별 실패');
+        result = out.result;
         break;
       }
       default: {

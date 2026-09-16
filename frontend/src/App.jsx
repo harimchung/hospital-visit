@@ -270,9 +270,9 @@ function App() {
           ...prev,
           makeMessage('pill-finder', {
             pillFinder: {
-              shape: '',
-              color: '',
-              imprint: '',
+              shape: data.uiPayload?.shape || '',
+              color: data.uiPayload?.color || '',
+              imprint: data.uiPayload?.imprint || '',
               status: 'idle',
               candidates: [],
               selected: null,
