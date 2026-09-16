@@ -113,11 +113,12 @@ function cloneResult(result) {
   return result ? JSON.parse(JSON.stringify(result)) : null
 }
 
-function ResultCard({ result }) {
+function ResultCard({ result, photos }) {
   return (
     <Card>
       <h3 className="c-card__section-title">{t('card.dept.title')}</h3>
       <Card.DeptRankList depts={result.department_top3} />
+      <Card.PhotoList photos={photos} />
       <p className="c-card__hint">{t('result.dept.note')}</p>
 
       <h3 className="c-card__section-title">{t('card.script.title')}</h3>
@@ -216,7 +217,10 @@ function App() {
     resetInitialChips()
   }, [resetInitialChips])
 
-  const showChips = chips.length > 0 && !visit.emergency && !isSending
+  const isVisitComplete =
+    step === STEPS.RESULT || messages.some((message) => message.type === 'result')
+  const showChips =
+    chips.length > 0 && !visit.emergency && !isSending && !isVisitComplete
 
   const applyAssistantResponse = useCallback((data) => {
     if (data.emergency) {
@@ -311,7 +315,7 @@ function App() {
   const sendUserTurn = useCallback(
     async (text) => {
       const v = visitRef.current
-      if (!text || isSending || !!v.emergency) return
+      if (!text || isSending || !!v.emergency || isVisitComplete) return
       const requestSessionId = v.id
 
       setMessages((prev) => [...prev, makeMessage('user', { text })])
@@ -342,7 +346,13 @@ function App() {
         }
       }
     },
-    [applyAssistantResponse, isSending, profiles, selectedProfileId],
+    [
+      applyAssistantResponse,
+      isSending,
+      isVisitComplete,
+      profiles,
+      selectedProfileId,
+    ],
   )
 
   // 칩 선택 → 사용자 메시지로 보내고 백엔드 응답 칩으로 교체
@@ -366,15 +376,14 @@ function App() {
 
   // 사진 선택 (InputBar 연동용)
   const handlePhotoSelect = useCallback((e) => {
+    if (isVisitComplete) return
     const file = e.target.files?.[0]
     if (!file) return
 
-    const label = new Date().getHours() >= 18 ? '밤' : '아침'
     const photo = {
       id: crypto.randomUUID(),
       blob: file,
       takenAt: new Date(),
-      label,
     }
     const src = URL.createObjectURL(file)
 
@@ -384,14 +393,15 @@ function App() {
     }))
     setMessages((prev) => [
       ...prev,
-      makeMessage('user', { text: label, photo: { src, caption: label } }),
+      makeMessage('user', { photo: { src } }),
       makeMessage('agent', { body: t('photo.saved') }),
     ])
 
     e.target.value = ''
-  }, [])
+  }, [isVisitComplete])
 
   const triggerPhotoInput = () => {
+    if (isVisitComplete) return
     fileInputRef.current?.click()
   }
 
@@ -585,7 +595,7 @@ function App() {
       lines: m.lines ?? undefined,
       folded: m.folded ?? undefined,
       photo: m.photo
-        ? { src: m.photo.src, caption: m.photo.caption }
+        ? { src: m.photo.src }
         : undefined,
       result: cloneResult(m.result) ?? undefined,
     }))
@@ -630,6 +640,13 @@ function App() {
   const selectedProfile = profiles.find(
     (profile) => profile.id === selectedProfileId,
   )
+  const visitPhotos = messages
+    .filter((message) => message.photo?.src)
+    .slice(0, 2)
+    .map((message) => ({
+      id: message.id,
+      src: message.photo.src,
+    }))
 
   return (
     <div className="app-layout">
@@ -714,7 +731,11 @@ function App() {
                     ))}
                   </div>
                 ) : msg.type === 'result' && msg.result ? (
-                  <ResultCard key={msg.id} result={msg.result} />
+                  <ResultCard
+                    key={msg.id}
+                    result={msg.result}
+                    photos={visitPhotos}
+                  />
                 ) : (
                   <UserBubble key={msg.id} photo={msg.photo}>
                     {msg.text ?? ''}
@@ -759,8 +780,8 @@ function App() {
             onChange={setInput}
             onSend={handleSendText}
             placeholder={t('input.placeholder')}
-            hasCamera={!isEmergency}
-            disabled={isEmergency || isSending}
+            hasCamera={!isEmergency && !isVisitComplete}
+            disabled={isEmergency || isSending || isVisitComplete}
             onCameraClick={triggerPhotoInput}
           />
         </div>

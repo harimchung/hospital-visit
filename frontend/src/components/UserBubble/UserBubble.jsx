@@ -16,13 +16,8 @@ import PhotoBubble from '../PhotoBubble/PhotoBubble'
 export default function UserBubble({ children, photo }) {
   return (
     <div className="user-bubble">
-      {photo && (
-        <PhotoBubble
-          src={photo.src}
-          caption={photo.caption}
-        />
-      )}
-      <p>{children}</p>
+      {photo && <PhotoBubble src={photo.src} caption={photo.caption} />}
+      {children != null && children !== '' && <p>{children}</p>}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import './Card.css'
 import { t } from '../../copy'
+import PhotoBubble from '../PhotoBubble/PhotoBubble'
 
 /**
  * C8 Card
@@ -95,16 +96,14 @@ Card.PhotoList = function PhotoList({ photos }) {
       <h3 className="c-card__section-title">{t('card.photos.title')}</h3>
       <div className="c-card__photo-list">
         {photos.map((photo) => (
-          <div key={photo.id} className="c-card__photo-item">
-            <img src={photo.src} alt={photo.caption || '사진'} />
-          </div>
+          <PhotoBubble
+            key={photo.id}
+            src={photo.src}
+            caption={photo.caption}
+            inverted
+          />
         ))}
       </div>
-      {photos.map((photo) => (
-        <p key={`${photo.id}-cap`} className="c-card__photo-caption">
-          {photo.caption}
-        </p>
-      ))}
     </div>
   )
 }
