@@ -191,7 +191,7 @@
 .c-card__dept-rank {
   display: flex;
   gap: var(--sp-2);
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: var(--sp-2);
 }
 
@@ -247,5 +247,5 @@
   display: flex;
   gap: var(--sp-2);
   margin-bottom: var(--sp-3);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
