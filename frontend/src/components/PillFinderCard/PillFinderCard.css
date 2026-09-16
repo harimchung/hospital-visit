@@ -1,0 +1,258 @@
+.pill-finder-card {
+  width: 100%;
+  padding: var(--sp-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-bubble);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-card);
+  color: var(--c-text);
+}
+
+.pill-finder-header h3,
+.pill-candidates h4 {
+  margin: 0;
+}
+
+.pill-finder-header h3 {
+  font-size: var(--fs-title);
+}
+
+.pill-finder-header p {
+  margin: var(--sp-1) 0 0;
+  color: var(--c-text-2);
+  font-size: var(--fs-hint);
+}
+
+.pill-finder-fieldset {
+  min-width: 0;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.pill-finder-fieldset legend,
+.pill-imprint-field > span {
+  display: block;
+  margin-bottom: var(--sp-2);
+  color: var(--c-text-2);
+  font-size: var(--fs-hint);
+  font-weight: 600;
+}
+
+.pill-shape-list,
+.pill-color-list {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  padding: 2px;
+}
+
+.pill-shape-option,
+.pill-color-option {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--c-text-2);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.pill-shape-option.is-selected,
+.pill-color-option.is-selected {
+  border-color: var(--c-primary);
+  background: var(--c-primary-tint);
+  color: var(--c-primary);
+}
+
+.pill-shape-icon,
+.pill-color-dot {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--c-border-strong);
+  background: var(--c-bg);
+}
+
+.pill-shape-icon {
+  position: relative;
+  border: 0;
+  background: transparent;
+}
+
+.pill-shape-icon::before {
+  position: absolute;
+  inset: 7px 3px;
+  border: 2px solid #6f9eb9;
+  border-radius: 5px;
+  background: #eaf4f8;
+  content: '';
+}
+
+.shape-원형::before {
+  inset: 4px;
+  border-radius: 50%;
+}
+
+.shape-타원::before {
+  inset: 8px 2px;
+  border-radius: 50%;
+}
+
+.shape-장방형::before {
+  inset: 8px 1px;
+  border-radius: 4px;
+}
+
+.shape-삼각형::before {
+  inset: 4px;
+  border: 0;
+  background: #6f9eb9;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.shape-삼각형::after {
+  position: absolute;
+  inset: 8px;
+  background: #eaf4f8;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  content: '';
+}
+
+.shape-사각형::before {
+  inset: 4px;
+  border-radius: 2px;
+}
+
+.pill-color-dot {
+  border-radius: 50%;
+}
+
+.pill-imprint-field {
+  display: block;
+  margin-top: var(--sp-4);
+}
+
+.pill-imprint-field input {
+  width: 100%;
+  height: 42px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-input);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+}
+
+.pill-search-button {
+  width: 100%;
+  min-height: var(--tap-min);
+  margin-top: var(--sp-3);
+  border: 0;
+  border-radius: var(--r-btn);
+  background: var(--c-primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pill-search-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.pill-finder-error,
+.pill-finder-empty {
+  margin: var(--sp-3) 0 0;
+  color: var(--c-text-2);
+  font-size: var(--fs-hint);
+}
+
+.pill-finder-error {
+  color: var(--c-danger);
+}
+
+.pill-candidates {
+  display: grid;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.pill-candidates h4 {
+  font-size: var(--fs-hint);
+  color: var(--c-text-2);
+}
+
+.pill-candidate {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-input);
+}
+
+.pill-candidate.is-selected {
+  border-color: var(--c-primary);
+  background: var(--c-primary-tint);
+}
+
+.pill-candidate-mark,
+.pill-candidate-photo {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.pill-candidate-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.pill-candidate-info strong,
+.pill-candidate-info span,
+.pill-candidate-info small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pill-candidate-info strong {
+  font-size: 13px;
+}
+
+.pill-candidate-info span,
+.pill-candidate-info small {
+  color: var(--c-text-2);
+  font-size: 10px;
+}
+
+.pill-candidate button {
+  min-width: 54px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--c-primary);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--c-primary);
+  font: inherit;
+  font-size: var(--fs-hint);
+  cursor: pointer;
+}
+
+.pill-candidate button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}

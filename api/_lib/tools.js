@@ -8,20 +8,30 @@ const PILL_BASE = 'https://apis.data.go.kr/1471000';
 
 // ---------- fetch / 유틸 ----------
 
-async function fetchWithKey(path, params) {
+export async function fetchWithKey(path, params) {
+  const key = process.env.DATA_API_KEY;
+  if (!key) throw new Error('DATA_API_KEY 누락');
   const url = new URL(PILL_BASE + path);
-  url.searchParams.set('serviceKey', process.env.DATA_API_KEY);
   Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+    if (v !== undefined && v !== null && String(v).trim() !== '') {
+      url.searchParams.set(k, String(v));
+    }
   });
   url.searchParams.set('type', 'json');
-  const res = await fetch(url.toString());
+  // 포털 키가 이미 % 인코딩돼 있으면 searchParams.set이 한 번 더 인코딩해서 400이 난다
+  const encodedKey = /%[0-9A-Fa-f]{2}/.test(key) ? key : encodeURIComponent(key);
+  const full = `${url.origin}${url.pathname}?serviceKey=${encodedKey}&${url.searchParams.toString()}`;
+  const res = await fetch(full);
   if (!res.ok) {
     const txt = await res.text().catch(() => '');
     throw new Error(`공공데이터 호출 실패: ${res.status} ${txt}`);
   }
-  const data = await res.json();
-  return data;
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`공공데이터 응답 JSON 아님: ${text.slice(0, 180)}`);
+  }
 }
 
 function getNested(data, ...keys) {
@@ -40,6 +50,9 @@ function pickItems(data, opName) {
     [];
   if (Array.isArray(items)) return items;
   if (items && Array.isArray(items.item)) return items.item;
+  if (items && typeof items === 'object' && (items.ITEM_NAME || items.itemName)) {
+    return [items];
+  }
   return [];
 }
 
@@ -59,7 +72,7 @@ export const TOOL_LABEL = {
 const TOOL_FUNCTIONS = [
   {
     name: 'lookup_drug',
-    description: '약 이름(성분명 또는 상품명)을 받아 e약은요 공공데이터에서 제품 정보를 조회한다. 약 이름 하나만 받는다.',
+    description: '제품명 또는 브랜드(예: 타이레놀, 아스피린정)로 e약은요에서 조회한다. 일상어는 넣지 않는다. 증상만 말한 경우에는 호출하지 않는다.',
     parameters: {
       type: 'object',
       properties: { itemName: { type: 'string', description: '약 이름' } },
@@ -98,13 +111,14 @@ const TOOL_FUNCTIONS = [
   },
   {
     name: 'pill_identify',
-    description: '낱알식별: 모양·색·각인 중 일부 또는 전부를 받아 공공데이터에서 후보 약을 조회한다. 일부 파라미터만 있어도 호출 가능.',
+    description:
+      '사용자가 약 이름을 모르겠다고 하거나, 이름을 알려달라고/찾아달라고 분명히 말했을 때만 호출한다. 예: "이름 몰라요", "약 이름이 뭐예요", "모양으로 찾아줘". 두통·발열 같은 증상만 말한 경우, "하얀 알약"만 말한 경우, "잘 모르겠어"로 건너뛸 때는 호출하지 않는다. 호출하면 모양·색·각인 선택 화면이 열린다.',
     parameters: {
       type: 'object',
       properties: {
-        shape: { type: 'string' },
-        color: { type: 'string' },
-        imprint: { type: 'string' },
+        shape: { type: 'string', description: '원형, 타원, 장방형, 삼각형, 사각형. 일상어 금지' },
+        color: { type: 'string', description: '하양, 노랑, 주황, 분홍, 빨강, 파랑, 초록, 보라. "하얀 알약" 금지' },
+        imprint: { type: 'string', description: '알약에 새겨진 글자. 없으면 생략' },
       },
       required: [],
     },
@@ -228,41 +242,104 @@ export async function durElderly(args) {
   return { ok: true, result: { cautions } };
 }
 
-export async function pillIdentify(args) {
-  const shapeMap = {
-    circle: '원형', oval: '타원형', oblong: '장방형', triangle: '삼각형', square: '사각형',
-    원형: '원형', 타원: '타원형', 타원형: '타원형', 장방형: '장방형', 삼각형: '삼각형', 사각형: '사각형',
-  };
-  const colorMap = {
-    white: '하양', yellow: '노랑', orange: '주황', pink: '분홍', red: '빨강', blue: '파랑', green: '초록', purple: '보라',
-    하양: '하양', 흰색: '하양', 노랑: '노랑', 주황: '주황', 분홍: '분홍', 빨강: '빨강', 파랑: '파랑', 초록: '초록', 보라: '보라',
-  };
-  const shape = shapeMap[args.shape] || '';
-  const color = colorMap[args.color] || '';
-  const imprint = args.imprint || '';
+const FINDER_SHAPE = {
+  circle: '원형', oval: '타원', oblong: '장방형', triangle: '삼각형', square: '사각형',
+  원형: '원형', 타원: '타원', 타원형: '타원', 장방형: '장방형', 삼각형: '삼각형', 사각형: '사각형',
+};
+const FINDER_COLOR = {
+  white: '하양', yellow: '노랑', orange: '주황', pink: '분홍', red: '빨강',
+  blue: '파랑', green: '초록', purple: '보라',
+  하양: '하양', 흰색: '하양', 하얀: '하양', 노랑: '노랑', 주황: '주황',
+  분홍: '분홍', 빨강: '빨강', 파랑: '파랑', 초록: '초록', 보라: '보라',
+};
+
+export function pillFinderPrefill(args = {}) {
+  const shape = FINDER_SHAPE[args.shape] || '';
+  const color = FINDER_COLOR[args.color] || '';
+  const imprint = typeof args.imprint === 'string' ? args.imprint.trim() : '';
+  return { shape, color, imprint };
+}
+
+export async function queryPillIdentify(args) {
+  const prefill = pillFinderPrefill(args);
+  const shape = prefill.shape === '타원' ? '타원형' : prefill.shape;
+  const color = prefill.color;
+  const imprint = prefill.imprint;
   if (!shape && !color && !imprint) {
-    return { ok: true, result: { candidates: [], count: 0 } };
+    return { ok: true, result: { candidates: [], count: 0, ...prefill } };
   }
-  const data = await fetchWithKey(
-    '/MdcinGrnIdntfcInfoService03/getMdcinGrnIdntfcInfoList03',
-    {
-      drug_shape: shape || undefined,
-      color_class1: color || undefined,
-      print_front: imprint || undefined,
-      numOfRows: 5,
-      pageNo: 1,
+
+  const seen = new Set();
+  const candidates = [];
+
+  function consider(row) {
+    if (!row || candidates.length >= 5) return;
+    const name = row.ITEM_NAME || row.itemName || '';
+    const maker = row.ENTP_NAME || row.entpName || '';
+    const rowShape = row.DRUG_SHAPE || row.drugShape || '';
+    const rowColor = row.COLOR_CLASS1 || row.colorClass1 || '';
+    const rowImprint = [row.PRINT_FRONT || row.printFront, row.PRINT_BACK || row.printBack]
+      .filter(Boolean)
+      .join(' ');
+    if (shape) {
+      const want = shape === '타원' ? '타원형' : shape;
+      const got = rowShape === '타원' ? '타원형' : rowShape;
+      if (got && got !== want) return;
     }
-  );
-  const candidates = pickItems(data, 'getMdcinGrnIdntfcInfoList03')
-    .slice(0, 5)
-    .map((row) => ({
-      name: row.ITEM_NAME || '',
-      maker: row.ENTP_NAME || '',
-      shape: row.DRUG_SHAPE || '',
-      color: row.COLOR_CLASS1 || '',
-      imprint: row.PRINT_FRONT || '',
-    }));
-    return { ok: true, result: { candidates, count: candidates.length } };
+    if (color && rowColor && !String(rowColor).includes(color)) return;
+    if (imprint) {
+      const needle = imprint.replace(/\s+/g, '').toUpperCase();
+      const hay = `${rowImprint} ${name}`.replace(/\s+/g, '').toUpperCase();
+      if (!hay.includes(needle)) return;
+    }
+    const key = `${name}|${maker}`;
+    if (!name || seen.has(key)) return;
+    seen.add(key);
+    candidates.push({
+      name,
+      maker,
+      shape: rowShape,
+      color: rowColor,
+      imprint: row.PRINT_FRONT || row.printFront || '',
+      image: row.ITEM_IMAGE || row.itemImage || row.BIG_PRDT_IMG_URL || '',
+    });
+  }
+
+  // v03는 모양·색 요청 파라미터가 없고 item_name만 필터된다
+  if (imprint && /[가-힣]/.test(imprint)) {
+    const named = await fetchWithKey(
+      '/MdcinGrnIdntfcInfoService03/getMdcinGrnIdntfcInfoList03',
+      { item_name: imprint, numOfRows: 10, pageNo: 1 },
+    );
+    for (const row of pickItems(named, 'getMdcinGrnIdntfcInfoList03')) consider(row);
+  }
+
+  for (let page = 1; page <= 2 && candidates.length < 5; page++) {
+    const data = await fetchWithKey(
+      '/MdcinGrnIdntfcInfoService03/getMdcinGrnIdntfcInfoList03',
+      { numOfRows: 100, pageNo: page },
+    );
+    for (const row of pickItems(data, 'getMdcinGrnIdntfcInfoList03')) {
+      consider(row);
+      if (candidates.length >= 5) break;
+    }
+  }
+
+  return { ok: true, result: { candidates, count: candidates.length, ...prefill } };
+}
+
+export async function pillIdentify(args) {
+  // agent 툴은 카드만 연다. 공공데이터 조회는 프론트 카드 → /api/pill.
+  const prefill = pillFinderPrefill(args);
+  return {
+    ok: true,
+    result: {
+      open_ui: true,
+      ...prefill,
+      candidates: [],
+      count: 0,
+    },
+  };
 }
 
 export async function departmentRules(args) {

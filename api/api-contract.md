@@ -47,7 +47,7 @@
     "turn_index": 2,
     "events": [
       {
-        "event": "safety|state|memory|tool_call|tool_result|review|ask|result|confirm_questions|pill_candidates|done",
+        "event": "safety|state|memory|tool_call|tool_result|review|ask|result|confirm_questions|pill_candidates|ui_action|done",
         "line": "string",            // 서버 로그 한 줄 + 프론트 화면에서 사용자 말풍선 밑에 쌓였다가 done에서 접히는 줄
         "body": "string|null",       // 프론트 말풍선용(ask, result, confirm_questions, pill_candidates 등). 그 외 이벤트는 body 없이 line만.
         "hint": "string|null",
@@ -80,6 +80,7 @@
   | `result` | `대본·질문 3개·진료과 1~3위 정리 완료` 등 요약 한 줄 | body = 프론트가 result 객체로 별도 렌더(진료과 name+reason, 대본 문장 배열 등), line은 로그 요약 | 결과 카드 단계. |
   | `confirm_questions` | `질문 3개 제시: "{Q1}" / "{Q2}" / "{Q3}"` | body = "이 세 가지 물어보면 될까요?" 류 말풍선 | 질문 3개 확정 전 제시. |
   | `pill_candidates` | `낱알식별 후보 3개: 타이레놀정500mg, ...` | body = 후보 제시 말풍선(프론트가 카드 렌더) | 낱알식별 후보 제시 시. |
+  | `ui_action` | `모양이랑 색으로 찾기 열기` | body 없음. payload.action=`open_pill_finder` | agent가 `pill_identify`를 골랐을 때. 공공데이터 조회는 프론트 카드에서. |
   | `done` | `done, 5단계 거침, 툴 2회, 응급 없음` / `done, 응급으로 종료` 등 | body 없음 | 턴 종료 시 항상. |
 
   - `line`은 실제로 일어난 단계만 만든다. 안 일어난 단계는 이벤트 자체가 없다(로그 줄도, 화면 줄도 없음).
@@ -158,7 +159,7 @@
   - `drug_dup`: `{ "duplicates":[{"effect_name":"해열진통소염제","meds":["타이레놀","아스피린"]}] }`
   - `drug_contra`: `{ "contra_pairs":[{"med_a":"심바스타틴","med_b":"이트라코나졸","reason":"횡문근융해증"}] }`
   - `elderly_caution`: `{ "cautions":[{"med":"...","detail":"..."}] }`
-  - `pill_identify`: `{ "candidates":[{"name":"...","maker":"...","shape":"...","color":"...","imprint":"..."}], "count":5 }`
+  - `pill_identify`: `{ "candidates":[{"name":"...","maker":"...","shape":"...","color":"...","imprint":"...","image":"..."}], "count":5 }`
 - 규칙: 인증키는 서버에서만 사용. 결과를 그대로 프론트에 반환. 판단은 프론트/agent 몫. "등록돼 있어요, 의사에게 확인하세요"까지만 말하도록 프론트 복사 규칙이 처리.
 
 ### 3.3 GET /api/health (파일: api/health.js)

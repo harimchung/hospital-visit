@@ -9,6 +9,7 @@ import Drawer from './Drawer/Drawer'
 import Hint from './Hint/Hint'
 import InputBar from './InputBar/InputBar'
 import PhotoBubble from './PhotoBubble/PhotoBubble'
+import PillFinderCard from './PillFinderCard/PillFinderCard'
 import UserBubble from './UserBubble/UserBubble'
 import ProfileForm from './ProfileForm/ProfileForm'
 
@@ -23,6 +24,7 @@ export {
   Hint,
   InputBar,
   PhotoBubble,
+  PillFinderCard,
   UserBubble,
   ProfileForm,
 }
