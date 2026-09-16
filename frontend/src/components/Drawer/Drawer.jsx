@@ -31,6 +31,7 @@ import { t } from '../../copy'
  * @param {(id) => void} onSelectProfile
  * @param {string[]}   visits           - [{ id, createdAt, title, summary }]
  * @param {(id) => void} onOpenVisit    - 진료 항목 탭 시
+ * @param {(id) => void} onDeleteVisit  - 진료 항목 삭제 요청
  * @param {() => void} onNewVisit       - "+ 새 진료 준비"
  * @param {() => void} onClearAll       - "기록 전부 지우기"
  * @param {boolean}    hasActiveVisit   - 진행 중 대화가 있으면 true
@@ -43,6 +44,7 @@ export default function Drawer({
   onSelectProfile,
   visits = [],
   onOpenVisit,
+  onDeleteVisit,
   onNewVisit,
   onClearAll,
   hasActiveVisit = false,
@@ -158,21 +160,40 @@ export default function Drawer({
                   <li
                     key={visit.id}
                     className={`visit-item ${visit.id === currentVisitId ? 'is-active' : ''}`}
-                    onClick={() => onOpenVisit?.(visit.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        onOpenVisit?.(visit.id)
-                      }
-                    }}
                   >
-                    <span className="visit-item-date">
-                      {formatVisitDate(visit.createdAt)}
-                    </span>
-                    <span className="visit-item-title">{visit.title}</span>
-                    <span className="visit-item-summary">{visit.summary}</span>
+                    <button
+                      type="button"
+                      className="visit-item-open"
+                      onClick={() => onOpenVisit?.(visit.id)}
+                    >
+                      <span className="visit-item-date">
+                        {formatVisitDate(visit.createdAt)}
+                      </span>
+                      <span className="visit-item-title">{visit.title}</span>
+                      <span className="visit-item-summary">{visit.summary}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="visit-item-delete"
+                      aria-label={`진료 기록 삭제: ${visit.title}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDeleteVisit?.(visit.id)
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </svg>
+                    </button>
                   </li>
                 ))}
               </ul>

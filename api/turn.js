@@ -4,6 +4,7 @@
 // 실패 시 최소 안전 프롬프트로 fallback.
 
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { checkEmergency, checkDistress, EMERGENCY_CONFIRM_CHIPS } from './_lib/emergency.js';
 import { summarizeState, STATE_FIELDS } from './_lib/state.js';
 import { chatCompletion, extractToolCall } from './_lib/solar.js';
@@ -11,7 +12,7 @@ import { TOOL_DEFS, TOOL_MAP, TOOL_LABEL } from './_lib/tools.js';
 import { getDepartmentTop3 } from './_lib/departments.js';
 
 // SKILL.md 경로: api/turn.js 기준 한 단계 위가 repo 루트다.
-const SKILL_PATH = new URL('../SKILL.md', import.meta.url).pathname;
+const SKILL_PATH = fileURLToPath(new URL('../SKILL.md', import.meta.url));
 
 // 프론트 부위 표시용 단어를 내부 ID로 매핑(코드 기반 보정용).
 const FRONT_PART_DISPLAY_MAP = {

@@ -179,6 +179,7 @@ function App() {
   const [input, setInput] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [confirmVisible, setConfirmVisible] = useState(null)
+  const [pendingDeleteVisitId, setPendingDeleteVisitId] = useState(null)
 
   const messagesRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -470,6 +471,30 @@ function App() {
     setSidebarOpen(false)
   }
 
+  const handleDeleteVisit = () => {
+    if (!pendingDeleteVisitId) return
+
+    const nextHistory = history.filter(
+      (session) => session.id !== pendingDeleteVisitId,
+    )
+    setHistory(nextHistory)
+    saveHistory(selectedProfileId, nextHistory)
+
+    if (pendingDeleteVisitId === visit.id) {
+      const nextVisit = emptyVisit()
+      visitRef.current = nextVisit
+      setVisit(nextVisit)
+      setMessages(createOpeningMessages())
+      setStep(STEPS.WHERE)
+      setInput('')
+      setIsSending(false)
+      resetInitialChips()
+    }
+
+    setPendingDeleteVisitId(null)
+    setConfirmVisible(null)
+  }
+
   const handleClearAll = () => {
     setConfirmVisible(null)
     clearAll()
@@ -617,6 +642,10 @@ function App() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onOpenVisit={handleOpenVisit}
+        onDeleteVisit={(id) => {
+          setPendingDeleteVisitId(id)
+          setConfirmVisible('delete')
+        }}
         onNewVisit={() => {
           if (messages.length > 0) setConfirmVisible('new')
           else handleNewStart()
@@ -751,6 +780,18 @@ function App() {
         open={profileFormOpen}
         onClose={() => setProfileFormOpen(false)}
         onSubmit={handleAddProfile}
+      />
+      <ConfirmDialog
+        open={confirmVisible === 'delete'}
+        onClose={() => {
+          setPendingDeleteVisitId(null)
+          setConfirmVisible(null)
+        }}
+        onConfirm={handleDeleteVisit}
+        title="진료 기록 삭제"
+        body="이 진료 기록만 삭제할까요? 삭제한 기록은 되돌릴 수 없어요."
+        confirmLabel="삭제"
+        variant="danger"
       />
       <ConfirmDialog
         open={confirmVisible === 'clear'}
