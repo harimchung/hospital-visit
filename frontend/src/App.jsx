@@ -1,4 +1,10 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from 'react'
 import { t } from './copy'
 import {
   loadStore,
@@ -83,17 +89,19 @@ const emptyVisit = () => ({
   filledFields: [],
   previousNote: null,
   state: null,
-});
+})
 
 /** 백엔드 state 객체에서 채워진 필드 이름만 뽑아낸다. */
 function deduceFilledFields(state) {
-  const fields = [];
-  if (state.body_part) fields.push('body_part');
-  if (state.symptom_desc) fields.push('symptom_desc');
-  if (state.since_when) fields.push('since_when');
-  if (state.current_meds && state.current_meds.length > 0) fields.push('current_meds');
-  if (state.tried_things && state.tried_things.length > 0) fields.push('tried_things');
-  return fields;
+  const fields = []
+  if (state.body_part) fields.push('body_part')
+  if (state.symptom_desc) fields.push('symptom_desc')
+  if (state.since_when) fields.push('since_when')
+  if (state.current_meds && state.current_meds.length > 0)
+    fields.push('current_meds')
+  if (state.tried_things && state.tried_things.length > 0)
+    fields.push('tried_things')
+  return fields
 }
 
 /** 메시지 한 건 */
@@ -167,7 +175,9 @@ function App() {
       ...v,
       turnIndex: data.turnIndex,
       state: data.state ?? v.state ?? null,
-      filledFields: data.state ? deduceFilledFields(data.state) : v.filledFields,
+      filledFields: data.state
+        ? deduceFilledFields(data.state)
+        : v.filledFields,
     }))
 
     if (data.reply) {
@@ -211,11 +221,12 @@ function App() {
             )
           }
           const next = [...prev]
-          next.splice(
-            lastUserIndex + 1,
-            0,
-            { id: traceId, type: 'trace', lines, folded: true },
-          )
+          next.splice(lastUserIndex + 1, 0, {
+            id: traceId,
+            type: 'trace',
+            lines,
+            folded: true,
+          })
           return next
         }
 
@@ -227,11 +238,12 @@ function App() {
           )
         }
         const next = [...prev]
-        next.splice(
-          lastUserIndex + 1,
-          0,
-          { id: traceId, type: 'trace', lines, folded: false },
-        )
+        next.splice(lastUserIndex + 1, 0, {
+          id: traceId,
+          type: 'trace',
+          lines,
+          folded: false,
+        })
         return next
       })
     }
@@ -289,34 +301,31 @@ function App() {
   }, [input, sendUserTurn])
 
   // 사진 선택 (InputBar 연동용)
-  const handlePhotoSelect = useCallback(
-    (e) => {
-      const file = e.target.files?.[0]
-      if (!file) return
+  const handlePhotoSelect = useCallback((e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
-      const label = new Date().getHours() >= 18 ? '밤' : '아침'
-      const photo = {
-        id: crypto.randomUUID(),
-        blob: file,
-        takenAt: new Date(),
-        label,
-      }
-      const src = URL.createObjectURL(file)
+    const label = new Date().getHours() >= 18 ? '밤' : '아침'
+    const photo = {
+      id: crypto.randomUUID(),
+      blob: file,
+      takenAt: new Date(),
+      label,
+    }
+    const src = URL.createObjectURL(file)
 
-      setVisit((v) => ({
-        ...v,
-        photos: [...v.photos, photo],
-      }))
-      setMessages((prev) => [
-        ...prev,
-        makeMessage('user', { text: label, photo: { src, caption: label } }),
-        makeMessage('agent', { body: t('photo.saved') }),
-      ])
+    setVisit((v) => ({
+      ...v,
+      photos: [...v.photos, photo],
+    }))
+    setMessages((prev) => [
+      ...prev,
+      makeMessage('user', { text: label, photo: { src, caption: label } }),
+      makeMessage('agent', { body: t('photo.saved') }),
+    ])
 
-      e.target.value = ''
-    },
-    [],
-  )
+    e.target.value = ''
+  }, [])
 
   const triggerPhotoInput = () => {
     fileInputRef.current?.click()
@@ -450,33 +459,6 @@ function App() {
     { id: 'fever_stiff_neck', label: '고열+목 뻣뻣함' },
   ]
 
-  function detectEmergency(text) {
-    if (!text) return null
-    const lower = text.toLowerCase().replace(/[\.\?\!\,\s]/g, ' ')
-
-    if (/\b(의식이|의식 저하|의식 없|정신 없|헛소리|횡설수설)\b/i.test(text)) {
-      return { signal: '의식 저하', cond: '의식 저하가' }
-    }
-    if (/\b(한쪽|반신|팔다리 힘|마비|감각 없|한쪽만)\b/i.test(text)) {
-      return { signal: '한쪽 마비', cond: '한쪽 마비 증상이' }
-    }
-    if (/\b(숨|호흡|숨쉬|호흡곤란|숨이|숨 못)\b/i.test(text)) {
-      return { signal: '호흡곤란', cond: '숨쉬기 어려운 증상이' }
-    }
-    if (/\b(지혈|피 안 멎|피가 안|계속 나|상처)\b/i.test(text)) {
-      return { signal: '지혈 안 됨', cond: '출혈이 멈추지 않는 상태가' }
-    }
-    if (/\b(경련|발작|몸이 굳|떨림|의식 잃)\b/i.test(text)) {
-      return { signal: '경련', cond: '경련이나 발작 증상이' }
-    }
-    if (
-      /\b(토혈|피를 토|커피색 토|검붉은 토|위장 출혈|토에서 피)\b/i.test(text)
-    ) {
-      return { signal: '토혈', cond: '피를 토하는 증상이' }
-    }
-    return null
-  }
-
   const isEmergency = !!visit.emergency
   const isResult = step === STEPS.RESULT
 
@@ -578,18 +560,6 @@ function App() {
 
         {/* ===== 메시지 영역 ===== */}
         <div className="messages" ref={messagesRef}>
-          {/* 진행 상태 표시 (원칙 9) */}
-          {isSending && !isResult && (
-            <div
-              className="progress-indicator"
-              role="status"
-              aria-live="polite"
-            >
-              <span className="progress-dot" aria-hidden="true" />
-              답을 정리하고 있어요
-            </div>
-          )}
-
           {/* S9 응급 카드 */}
           {isEmergency && visit.emergency && (
             <Card variant="danger">
@@ -629,10 +599,14 @@ function App() {
               <Card.DeptRankList depts={visit.result.department_top3} />
               <p className="c-card__hint">{t('result.dept.note')}</p>
 
-              <h3 className="c-card__section-title">{t('card.script.title')}</h3>
+              <h3 className="c-card__section-title">
+                {t('card.script.title')}
+              </h3>
               <Card.ScriptList items={visit.result.script} />
 
-              <h3 className="c-card__section-title">{t('card.questions.title')}</h3>
+              <h3 className="c-card__section-title">
+                {t('card.questions.title')}
+              </h3>
               <Card.Questions items={visit.result.questions} />
 
               <Card.Actions>
@@ -643,7 +617,9 @@ function App() {
                       [
                         ...(visit.result.script || []),
                         '',
-                        ...(visit.result.questions || []).map((q, i) => `${i + 1}. ${q}`),
+                        ...(visit.result.questions || []).map(
+                          (q, i) => `${i + 1}. ${q}`,
+                        ),
                       ].join('\n'),
                     )
                   }
@@ -657,7 +633,9 @@ function App() {
 
               <textarea
                 className="c-card__textarea"
-                placeholder={visit.result.note_placeholder || t('result.note.placeholder')}
+                placeholder={
+                  visit.result.note_placeholder || t('result.note.placeholder')
+                }
                 style={{ marginTop: '12px' }}
               />
             </Card>
@@ -674,7 +652,9 @@ function App() {
                 ) : msg.type === 'trace' ? (
                   <div key={msg.id} className="trace-lines">
                     {(msg.lines || []).map((line, i) => (
-                      <div key={i} className="trace-line">{line}</div>
+                      <div key={i} className="trace-line">
+                        {line}
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -682,6 +662,15 @@ function App() {
                     {msg.text ?? ''}
                   </UserBubble>
                 ),
+              )}
+              {/* 진행 상태 표시 (원칙 9) */}
+              {isSending && (
+                <AgentBubble>
+                  <span className="progress-indicator" role="status">
+                    <span className="progress-dot" aria-hidden="true" />
+                    답을 정리하고 있어요
+                  </span>
+                </AgentBubble>
               )}
             </>
           )}

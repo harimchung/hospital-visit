@@ -149,12 +149,8 @@ body {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--c-bg);
-  border-radius: var(--r-bubble);
   font-size: var(--fs-hint);
   color: var(--c-text-2);
-  animation: bubble-in 160ms ease-out both;
 }
 
 .progress-dot {
