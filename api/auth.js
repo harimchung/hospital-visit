@@ -1,168 +1,114 @@
-// api/auth.js — Supabase Auth REST 중계 (가입/로그인/토큰 갱신)
-// 프론트에서 anon 키를 직접 쓰지 않도록 /api가 중계한다.
-// 반환값: access_token, refresh_token 만. 사용자 정보, 키 값은 프론트에 노출하지 않는다.
+// api/auth.js — Supabase Auth REST 중계 (가입, 로그인, 토큰 갱신)
+// 프론트가 anon 키를 직접 쓰지 않도록 /api가 중계한다.
+// 돌려주는 건 access_token, refresh_token, 만료 시간만. 키 값은 절대 프론트로 안 나간다.
 // 환경변수: SUPABASE_URL, SUPABASE_ANON_KEY (Vercel 설정, 로컬은 .env.local)
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './_lib/supabase-env.js';
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('SUPABASE_URL, SUPABASE_ANON_KEY 환경변수가 필요합니다');
+function json(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
-const AUTH_BASE = `${SUPABASE_URL}/auth/v1`;
-
-// 공통 헤더
 function authHeaders() {
   return {
     'Content-Type': 'application/json',
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    apikey: SUPABASE_ANON_KEY,
   };
 }
 
-// 가입: POST /auth/v1/signup
-export async function signup(email, password) {
-  const res = await fetch(`${AUTH_BASE}/signup`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`가입 실패 (${res.status}): ${text}`);
+// Supabase Auth 에러 본문에서 사람이 읽을 메시지만 뽑는다. 키나 내부 정보는 그대로 넘기지 않는다
+function authErrorMessage(status, text) {
+  let code = '';
+  try {
+    const j = JSON.parse(text);
+    code = j.error_code || j.error || j.msg || '';
+  } catch {
+    code = '';
   }
-
-  const data = await res.json();
-  return extractTokens(data);
+  if (code === 'invalid_credentials') return '이메일이나 비밀번호가 맞지 않아요.';
+  if (code === 'email_address_invalid') return '쓸 수 없는 이메일 주소예요.';
+  if (code === 'user_already_exists' || code === 'email_exists') return '이미 가입된 이메일이에요. 로그인해 주세요.';
+  if (code === 'weak_password') return '비밀번호가 너무 짧아요. 6자 이상으로 해 주세요.';
+  if (code === 'over_email_send_rate_limit') return '메일을 너무 자주 보냈어요. 잠시 뒤 다시 해 주세요.';
+  if (code === 'email_not_confirmed') return '가입 확인 메일의 링크를 먼저 눌러 주세요.';
+  return `인증 요청이 거절됐어요 (${status}).`;
 }
 
-// 로그인: POST /auth/v1/token?grant_type=password
-export async function signin(email, password) {
-  const res = await fetch(`${AUTH_BASE}/token?grant_type=password`, {
+async function callAuth(path, payload) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`로그인 실패 (${res.status}): ${text}`);
+  const text = await res.text();
+  let data = null;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = null;
   }
-
-  const data = await res.json();
-  return extractTokens(data);
+  return { res, data, text };
 }
 
-// 토큰 갱신: POST /auth/v1/token?grant_type=refresh_token
-export async function refreshAccessToken(refreshToken) {
-  const res = await fetch(`${AUTH_BASE}/token?grant_type=refresh_token`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`토큰 갱신 실패 (${res.status}): ${text}`);
-  }
-
-  const data = await res.json();
-  return extractTokens(data);
-}
-
-// 응답에서 access_token, refresh_token만 추출
-function extractTokens(data) {
-  // signup/signin 응답 구조:
-  //   { access_token, token_type, expires_in, refresh_token, user }
-  // signup에서 이미 인증된 경우(user만 반환되는 경우)는 tokens 없음 → 에러
-  if (!data.access_token || !data.refresh_token) {
-    throw new Error('인증 토큰이 응답에 없습니다. 이메일 인증을 확인하세요.');
-  }
-
+function tokensOf(data) {
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
-    expiresIn: data.expires_in,
+    expiresIn: data.expires_in ?? null,
   };
 }
 
-// Vercel 공개 엔드포인트: POST /api/auth (action 필드로 구분)
 export async function POST(req) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return json({ ok: false, error: '회원 기능이 아직 설정되지 않았어요.' }, 503);
+  }
+
   let body;
   try {
     body = await req.json();
   } catch {
-    return new Response(
-      JSON.stringify({ ok: false, error: '요청 본문이 JSON이 아닙니다' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
+    return json({ ok: false, error: '요청 본문이 JSON이 아니에요.' }, 400);
   }
 
-  const { action, email, password, refreshToken } = body;
-
-  // 필수 필드 검사
-  if (!action) {
-    return new Response(
-      JSON.stringify({ ok: false, error: 'action이 필요합니다 (signup | signin | refresh)' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+  const { action, email, password, refreshToken } = body || {};
+  if (!action) return json({ ok: false, error: 'action이 필요해요 (signup, signin, refresh).' }, 400);
 
   try {
-    let result;
-    switch (action) {
-      case 'signup':
-        if (!email || !password) {
-          return new Response(
-            JSON.stringify({ ok: false, error: 'email과 password가 필요합니다' }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-        result = await signup(email, password);
-        return new Response(
-          JSON.stringify({ ok: true, action: 'signup', ...result }),
-          { headers: { 'Content-Type': 'application/json' } }
-        );
-
-      case 'signin':
-        if (!email || !password) {
-          return new Response(
-            JSON.stringify({ ok: false, error: 'email과 password가 필요합니다' }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-        result = await signin(email, password);
-        return new Response(
-          JSON.stringify({ ok: true, action: 'signin', ...result }),
-          { headers: { 'Content-Type': 'application/json' } }
-        );
-
-      case 'refresh':
-        if (!refreshToken) {
-          return new Response(
-            JSON.stringify({ ok: false, error: 'refreshToken이 필요합니다' }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-        result = await refreshAccessToken(refreshToken);
-        return new Response(
-          JSON.stringify({ ok: true, action: 'refresh', ...result }),
-          { headers: { 'Content-Type': 'application/json' } }
-        );
-
-      default:
-        return new Response(
-          JSON.stringify({ ok: false, error: `알 수 없는 action: ${action}` }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
+    if (action === 'signup' || action === 'signin') {
+      if (!email || !password) return json({ ok: false, error: '이메일과 비밀번호가 필요해요.' }, 400);
+      const path = action === 'signup' ? '/signup' : '/token?grant_type=password';
+      const { res, data, text } = await callAuth(path, { email, password });
+      if (!res.ok) {
+        const status = res.status === 400 && action === 'signin' ? 401 : res.status >= 500 ? 502 : res.status;
+        return json({ ok: false, action, error: authErrorMessage(res.status, text) }, status);
+      }
+      // 이메일 확인이 켜진 프로젝트는 가입 직후 토큰이 없다. 실패가 아니라 "메일 확인 필요"로 알린다
+      if (!data || !data.access_token || !data.refresh_token) {
+        return json({
+          ok: true,
+          action,
+          needsConfirmation: true,
+          message: '가입 확인 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인해 주세요.',
+        });
+      }
+      return json({ ok: true, action, ...tokensOf(data) });
     }
+
+    if (action === 'refresh') {
+      if (!refreshToken) return json({ ok: false, error: 'refreshToken이 필요해요.' }, 400);
+      const { res, data, text } = await callAuth('/token?grant_type=refresh_token', { refresh_token: refreshToken });
+      if (!res.ok || !data || !data.access_token) {
+        return json({ ok: false, action, error: authErrorMessage(res.status, text) }, res.ok ? 401 : (res.status >= 500 ? 502 : 401));
+      }
+      return json({ ok: true, action, ...tokensOf(data) });
+    }
+
+    return json({ ok: false, error: `알 수 없는 action: ${action}` }, 400);
   } catch (err) {
-    console.error('[api/auth] 에러:', err.message);
-    return new Response(
-      JSON.stringify({ ok: false, error: err.message || '인증 처리 중 오류가 발생했습니다' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    console.error('[api/auth] 오류:', err && err.message ? err.message : err);
+    return json({ ok: false, error: '인증 서버와 통신이 안 돼요. 잠시 뒤 다시 해 주세요.' }, 502);
   }
 }
