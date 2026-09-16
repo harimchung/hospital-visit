@@ -109,6 +109,54 @@ function makeMessage(type, payload) {
   return { id: crypto.randomUUID(), type, ...payload }
 }
 
+function cloneResult(result) {
+  return result ? JSON.parse(JSON.stringify(result)) : null
+}
+
+function ResultCard({ result }) {
+  return (
+    <Card>
+      <h3 className="c-card__section-title">{t('card.dept.title')}</h3>
+      <Card.DeptRankList depts={result.department_top3} />
+      <p className="c-card__hint">{t('result.dept.note')}</p>
+
+      <h3 className="c-card__section-title">{t('card.script.title')}</h3>
+      <Card.ScriptList items={result.script} />
+
+      <h3 className="c-card__section-title">{t('card.questions.title')}</h3>
+      <Card.Questions items={result.questions} />
+
+      <Card.Actions>
+        <Button
+          kind="primary"
+          onClick={() =>
+            navigator.clipboard.writeText(
+              [
+                ...(result.script || []),
+                '',
+                ...(result.questions || []).map((q, i) => `${i + 1}. ${q}`),
+              ].join('\n'),
+            )
+          }
+        >
+          {t('card.action.copy')}
+        </Button>
+        <Button kind="secondary" onClick={() => window.print()}>
+          {t('card.action.print')}
+        </Button>
+      </Card.Actions>
+
+      <textarea
+        className="c-card__textarea"
+        placeholder={
+          result.note_placeholder || t('result.note.placeholder')
+        }
+        style={{ marginTop: '12px' }}
+      />
+    </Card>
+  )
+}
+
 function App() {
   const [visit, setVisit] = useState(emptyVisit())
   const visitRef = useRef(visit)
@@ -137,10 +185,15 @@ function App() {
   const chatEndRef = useRef(null)
   const composerRef = useRef(null)
 
-  // 메시지가 쌓일 때마다 말풍선 맨 아래로 스크롤
+  // 메시지와 상태 카드가 나타날 때마다 메시지 영역 맨 아래로 스크롤
   useEffect(() => {
-    messagesRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    const container = messagesRef.current
+    if (!container) return
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: 'smooth',
+    })
+  }, [messages, isSending, step, visit.emergency])
 
   const measureChipAreaWidth = useCallback(() => {
     const el = composerRef.current
@@ -191,7 +244,12 @@ function App() {
     }
     setChips(Array.isArray(data.chips) ? data.chips : [])
     if (data.result) {
-      setVisit((v) => ({ ...v, result: data.result }))
+      const result = cloneResult(data.result)
+      setVisit((v) => ({ ...v, result }))
+      setMessages((prev) => [
+        ...prev,
+        makeMessage('result', { result }),
+      ])
       setStep(STEPS.RESULT)
     }
 
@@ -253,6 +311,7 @@ function App() {
     async (text) => {
       const v = visitRef.current
       if (!text || isSending || !!v.emergency) return
+      const requestSessionId = v.id
 
       setMessages((prev) => [...prev, makeMessage('user', { text })])
       setChips([])
@@ -265,8 +324,10 @@ function App() {
           visit: v,
           profile: profiles.find((p) => p.id === selectedProfileId) || null,
         })
+        if (visitRef.current.id !== requestSessionId) return
         applyAssistantResponse(data)
       } catch {
+        if (visitRef.current.id !== requestSessionId) return
         setMessages((prev) => [
           ...prev,
           makeMessage('agent', {
@@ -275,7 +336,9 @@ function App() {
           }),
         ])
       } finally {
-        setIsSending(false)
+        if (visitRef.current.id === requestSessionId) {
+          setIsSending(false)
+        }
       }
     },
     [applyAssistantResponse, isSending, profiles, selectedProfileId],
@@ -340,7 +403,9 @@ function App() {
       setHistory(next)
       saveHistory(selectedProfileId, next)
     }
-    setVisit(emptyVisit())
+    const nextVisit = emptyVisit()
+    visitRef.current = nextVisit
+    setVisit(nextVisit)
     setMessages(createOpeningMessages())
     setStep(STEPS.WHERE)
     setInput('')
@@ -368,17 +433,30 @@ function App() {
       saveHistory(selectedProfileId, nextHistory)
     }
 
-    setVisit({
+    const restoredVisit = {
       ...session.visit,
       // 생성 시각은 히스토리 순서를 위해 보존
       createdAt: session.createdAt || session.visit?.createdAt,
-    })
-    setMessages(
-      (session.messages || []).map((m) => ({
-        ...m,
-        body: plainBody(m.body),
-      })),
-    )
+      result: cloneResult(session.visit?.result),
+    }
+    visitRef.current = restoredVisit
+    setVisit(restoredVisit)
+    const restoredMessages = (session.messages || []).map((m) => ({
+      ...m,
+      body: plainBody(m.body),
+      result: cloneResult(m.result),
+    }))
+    if (
+      session.visit?.result &&
+      !restoredMessages.some((message) => message.type === 'result')
+    ) {
+      restoredMessages.push({
+        id: `result-${session.id}`,
+        type: 'result',
+        result: cloneResult(session.visit.result),
+      })
+    }
+    setMessages(restoredMessages)
     const restoredStep = session.step || STEPS.WHERE
     setStep(restoredStep)
     setChips(
@@ -396,7 +474,9 @@ function App() {
     setConfirmVisible(null)
     clearAll()
     setHistory([])
-    setVisit(emptyVisit())
+    const nextVisit = emptyVisit()
+    visitRef.current = nextVisit
+    setVisit(nextVisit)
     setMessages(createOpeningMessages())
     setStep(STEPS.WHERE)
     setIsSending(false)
@@ -416,13 +496,6 @@ function App() {
   }
 
   const handleSelectProfile = (id) => {
-    if (id === selectedProfileId) {
-      setSelectedProfileId(null)
-      setHistory(loadHistory(null))
-
-      return
-    }
-
     if (messages.length > 0) {
       const saved = snapshotSession(visit, messages, step, chips)
       saved.profileId = selectedProfileId
@@ -431,13 +504,16 @@ function App() {
       saveHistory(selectedProfileId, next)
     }
 
-    setSelectedProfileId(id)
+    const targetProfileId = id === selectedProfileId ? null : id
+    setSelectedProfileId(targetProfileId)
     const store = loadStore()
-    store.selectedProfileId = id
+    store.selectedProfileId = targetProfileId
     saveStore(store)
 
-    setHistory(loadHistory(id))
-    setVisit(emptyVisit())
+    setHistory(loadHistory(targetProfileId))
+    const nextVisit = emptyVisit()
+    visitRef.current = nextVisit
+    setVisit(nextVisit)
     setMessages(createOpeningMessages())
     setStep(STEPS.WHERE)
     setIsSending(false)
@@ -460,7 +536,6 @@ function App() {
   ]
 
   const isEmergency = !!visit.emergency
-  const isResult = step === STEPS.RESULT
 
   // 히스토리 열람 하는 부분 추가가
 
@@ -487,6 +562,7 @@ function App() {
       photo: m.photo
         ? { src: m.photo.src, caption: m.photo.caption }
         : undefined,
+      result: cloneResult(m.result) ?? undefined,
     }))
     const firstUser = plainMessages.find((m) => m.type === 'user' && m.text)
     return {
@@ -499,7 +575,7 @@ function App() {
         id: visit.id,
         part: visit.part,
         photos: [],
-        result: visit.result,
+        result: cloneResult(visit.result),
         emergency: visit.emergency,
         createdAt: visit.createdAt,
         turnIndex: visit.turnIndex ?? 1,
@@ -592,57 +668,8 @@ function App() {
             </Card>
           )}
 
-          {/* S8 결과 카드 (현재는 조건 충족 시만 렌더) */}
-          {isResult && visit.result && (
-            <Card>
-              <h3 className="c-card__section-title">{t('card.dept.title')}</h3>
-              <Card.DeptRankList depts={visit.result.department_top3} />
-              <p className="c-card__hint">{t('result.dept.note')}</p>
-
-              <h3 className="c-card__section-title">
-                {t('card.script.title')}
-              </h3>
-              <Card.ScriptList items={visit.result.script} />
-
-              <h3 className="c-card__section-title">
-                {t('card.questions.title')}
-              </h3>
-              <Card.Questions items={visit.result.questions} />
-
-              <Card.Actions>
-                <Button
-                  kind="primary"
-                  onClick={() =>
-                    navigator.clipboard.writeText(
-                      [
-                        ...(visit.result.script || []),
-                        '',
-                        ...(visit.result.questions || []).map(
-                          (q, i) => `${i + 1}. ${q}`,
-                        ),
-                      ].join('\n'),
-                    )
-                  }
-                >
-                  {t('card.action.copy')}
-                </Button>
-                <Button kind="secondary" onClick={() => window.print()}>
-                  {t('card.action.print')}
-                </Button>
-              </Card.Actions>
-
-              <textarea
-                className="c-card__textarea"
-                placeholder={
-                  visit.result.note_placeholder || t('result.note.placeholder')
-                }
-                style={{ marginTop: '12px' }}
-              />
-            </Card>
-          )}
-
           {/* 일반 메시지 흐름 — 기록 기반 렌더 */}
-          {!isEmergency && !isResult && (
+          {!isEmergency && (
             <>
               {messages.map((msg) =>
                 msg.type === 'agent' ? (
@@ -657,6 +684,8 @@ function App() {
                       </div>
                     ))}
                   </div>
+                ) : msg.type === 'result' && msg.result ? (
+                  <ResultCard key={msg.id} result={msg.result} />
                 ) : (
                   <UserBubble key={msg.id} photo={msg.photo}>
                     {msg.text ?? ''}
