@@ -111,6 +111,21 @@ body {
   align-items: flex-start;
 }
 
+
+/* App.css */
+.composer {
+  display: flex;
+  flex-direction: column;
+  background: var(--c-bg);
+}
+
+.chip-tray-dock {
+  padding: var(--sp-2) var(--sp-3) 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
 /* ================================================================
    말풍선 등장 모션 (2.4) — 컴포넌트 CSS와 키프레임 공유
    ================================================================ */
@@ -134,12 +149,8 @@ body {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--c-bg);
-  border-radius: var(--r-bubble);
   font-size: var(--fs-hint);
   color: var(--c-text-2);
-  animation: bubble-in 160ms ease-out both;
 }
 
 .progress-dot {
@@ -262,6 +273,24 @@ body {
   .user-bubble {
     break-inside: avoid;
   }
+}
+
+/* ================================================================
+   trace 줄 (백엔드 events → 프론트 접는 줄)
+   ================================================================ */
+
+.trace-lines {
+  padding: 0 var(--sp-3);
+  margin-top: calc(var(--sp-3) * -1);
+  margin-bottom: var(--sp-3);
+}
+
+.trace-line {
+  font-size: 11px;
+  color: var(--c-text-2);
+  padding: 2px 0;
+  white-space: pre-wrap;
+  line-height: 1.4;
 }
 
 /* ================================================================

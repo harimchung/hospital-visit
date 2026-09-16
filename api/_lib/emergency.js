@@ -1,0 +1,91 @@
+// _lib/emergency.js
+// 응급 신호 10개 코드 판정(SKILL.md 2절). 키워드 표 기반.
+// 한글은 \b(단어 경계)가 안 먹으므로 쓰지 않는다. 대신 표현을 좁게 잡아 오탐을 막는다.
+// 반환: { emergency: { signal, cond } } 또는 { ok: true }
+
+const SIGNALS = [
+  {
+    id: '의식 저하',
+    cond: '지금',
+    re: /의식이 (없|흐|안 돌아)|의식 (저하|없|잃)|의식을 잃|깨워도|깨우기 (어렵|힘)|정신을 잃|불러도 (대답|반응)/,
+  },
+  {
+    id: '한쪽 마비',
+    cond: '갑자기',
+    re: /한쪽 (팔|다리|얼굴|몸|손|입)|반신|마비|말이 어눌|말이 안 나|혀가 꼬|(한쪽|팔|다리).{0,10}힘이 (빠|안 들어)/,
+  },
+  {
+    id: '흉통 20분 이상',
+    cond: '20분 넘게',
+    re: /(가슴|흉통|명치|흉부).{0,20}(쥐어짜|조여|눌리|찢어|짓눌|터질)|(가슴|흉통).{0,30}(20분|30분|한 시간|계속)/,
+  },
+  {
+    id: '호흡곤란',
+    cond: '지금',
+    re: /숨을 (못|쉴 수 없|쉬기 힘|쉬기가 힘|제대로 못)|숨이 (안 쉬|막|넘어|안 쉬어)|숨쉬기 (힘|어렵)|호흡곤란|호흡이 (힘|어렵|안)/,
+  },
+  {
+    id: '지혈 안 됨',
+    cond: '멎지 않고',
+    re: /지혈이 안|피가 (안 멎|멎지|계속 나|안 멈|멈추지)|출혈이 (멈추지|안 멈|계속)|피가 계속/,
+  },
+  {
+    id: '급성 두통',
+    cond: '갑자기',
+    re: /(갑자기|벼락|망치|난생|처음 겪|가장 심|극심).{0,15}(두통|머리)|(두통|머리).{0,15}(벼락|망치|난생|가장 심|극심)/,
+  },
+  {
+    id: '경련',
+    cond: '지금',
+    re: /경련|발작|몸이 굳|눈이 돌아|거품을|온몸을 떨|온몸이 떨/,
+  },
+  {
+    id: '토혈/흑변',
+    cond: '지금',
+    re: /토혈|피를 토|피 토|커피색|검붉은 (토|변|것)|검은 변|흑변|변이 검/,
+  },
+  {
+    id: '딱딱한 복통',
+    cond: '지금',
+    re: /배가 (딱딱|굳|판자|돌처럼)|복부 경직|배 경직|배를 만지면 (딱딱|굳)/,
+  },
+  {
+    id: '고열+목 뻣뻣함',
+    cond: '함께',
+    re: /(고열|열이|발열|열나|열 나).{0,30}(목이 뻣뻣|목 뻣뻣|목이 굳|목이 안 굽|목을 못)|(목이 뻣뻣|목 뻣뻣|목이 굳).{0,30}(열|고열)/,
+  },
+];
+
+// 응급 확인 턴에 쓰는 칩. 각 라벨은 위 표에 반드시 걸리도록 쓴다 (테스트로 보장)
+export const EMERGENCY_CONFIRM_CHIPS = [
+  { id: 'em_consciousness', label: '의식이 흐려져요' },
+  { id: 'em_paralysis', label: '한쪽 팔다리에 힘이 빠져요' },
+  { id: 'em_chest', label: '가슴을 쥐어짜듯 아프고 20분 넘게 계속돼요' },
+  { id: 'em_breath', label: '숨을 못 쉬겠어요' },
+  { id: 'em_bleed', label: '피가 안 멎어요' },
+  { id: 'em_headache', label: '갑자기 벼락 치듯 심한 두통이에요' },
+  { id: 'em_seizure', label: '경련을 해요' },
+  { id: 'em_blood', label: '피를 토하거나 검은 변을 봤어요' },
+  { id: 'em_abdomen', label: '배가 딱딱하게 굳었어요' },
+  { id: 'em_fever', label: '열이 나면서 목이 뻣뻣해요' },
+  { id: 'em_none', label: '그 정도는 아니에요', isEscape: true },
+];
+
+// 강한 표현. 응급 확정이 아니라 확인 턴을 여는 신호. 모델이 의심을 안 켜도 여기 걸리면 확인한다
+const DISTRESS = /죽을 (것|거) 같|죽을것 같|죽을거 같|죽을거같|죽을것같|쓰러질 (것|거) 같|정신이 아득|눈앞이 (캄캄|하얘)|식은땀|119|응급실/;
+
+export function checkDistress(userText) {
+  if (!userText) return false;
+  return DISTRESS.test(String(userText).replace(/\s+/g, ' ').trim());
+}
+
+export function checkEmergency(userText) {
+  if (!userText) return { ok: true };
+  const text = String(userText).replace(/\s+/g, ' ').trim();
+  for (const s of SIGNALS) {
+    if (s.re.test(text)) {
+      return { emergency: { signal: s.id, cond: s.cond } };
+    }
+  }
+  return { ok: true };
+}

@@ -2,8 +2,6 @@
   "framework": "vite",
   "installCommand": "npm run ci-install",
   "buildCommand": "npm run build",
-  "outputDirectory": "frontend/dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "devCommand": "cd frontend && npx vite --port $PORT",
+  "outputDirectory": "frontend/dist"
 }
