@@ -275,11 +275,16 @@
 }
 
 .visit-item-title {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
   font-family: var(--font);
   font-size: var(--fs-body);
   font-weight: 600;
   line-height: var(--lh);
   color: var(--c-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .visit-item-summary {
