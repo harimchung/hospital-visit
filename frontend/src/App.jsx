@@ -326,7 +326,7 @@ function App() {
   const handleNewStart = () => {
     setConfirmVisible(null)
     if (messages.length > 0) {
-      const session = snapshotSession(visit, messages, step)
+      const session = snapshotSession(visit, messages, step, chips)
       const next = upsertHistory(history, session)
       setHistory(next)
       saveHistory(selectedProfileId, next)
@@ -353,7 +353,7 @@ function App() {
     // 진행 중 대화만 저장. 순서는 createdAt 기준으로 유지 (맨 위로 끌어올리지 않음)
     let nextHistory = history
     if (messages.length > 0) {
-      const saved = snapshotSession(visit, messages, step)
+      const saved = snapshotSession(visit, messages, step, chips)
       nextHistory = upsertHistory(history, saved)
       setHistory(nextHistory)
       saveHistory(selectedProfileId, nextHistory)
@@ -370,8 +370,15 @@ function App() {
         body: plainBody(m.body),
       })),
     )
-    setStep(session.step || STEPS.WHERE)
-    setChips([])
+    const restoredStep = session.step || STEPS.WHERE
+    setStep(restoredStep)
+    setChips(
+      Array.isArray(session.chips)
+        ? session.chips
+        : restoredStep === STEPS.WHERE
+          ? pickInitialWhereChips(measureChipAreaWidth())
+          : [],
+    )
     setInput('')
     setSidebarOpen(false)
   }
@@ -408,7 +415,7 @@ function App() {
     }
 
     if (messages.length > 0) {
-      const saved = snapshotSession(visit, messages, step)
+      const saved = snapshotSession(visit, messages, step, chips)
       saved.profileId = selectedProfileId
       const next = upsertHistory(history, saved)
       setHistory(next)
@@ -486,7 +493,7 @@ function App() {
     }
     return ''
   }
-  function snapshotSession(visit, messages, step) {
+  function snapshotSession(visit, messages, step, chips) {
     const plainMessages = messages.map((m) => ({
       id: m.id,
       type: m.type,
@@ -519,6 +526,7 @@ function App() {
       },
       messages: plainMessages,
       step,
+      chips: chips.map((chip) => ({ ...chip })),
       profileId: selectedProfileId,
     }
   }
@@ -526,7 +534,7 @@ function App() {
   const currentSession =
     messages.length > 0
       ? {
-          ...snapshotSession(visit, messages, step),
+          ...snapshotSession(visit, messages, step, chips),
           status: 'active',
           summary: '작성 중',
         }
