@@ -14,6 +14,7 @@ import {
   clearAll,
 } from './storage'
 import { sendChatMessage, toApiHistory } from './api/chat'
+import { identifyPill } from './api/pill'
 import { pickInitialWhereChips } from './initialChips'
 
 import './App.css'
@@ -31,6 +32,7 @@ import {
   ConfirmDialog,
   Button,
   ProfileForm,
+  PillFinderCard,
 } from './components'
 
 const STEPS = {
@@ -257,6 +259,29 @@ function App() {
       ])
       setStep(STEPS.RESULT)
     }
+    if (data.uiAction === 'open_pill_finder') {
+      setMessages((prev) => {
+        const hasOpenFinder = prev.some(
+          (message) =>
+            message.type === 'pill-finder' && !message.pillFinder?.selected,
+        )
+        if (hasOpenFinder) return prev
+        return [
+          ...prev,
+          makeMessage('pill-finder', {
+            pillFinder: {
+              shape: '',
+              color: '',
+              imprint: '',
+              status: 'idle',
+              candidates: [],
+              selected: null,
+              error: null,
+            },
+          }),
+        ]
+      })
+    }
 
     const events = data.events ?? []
     const traceEvents = events.filter((e) => e.event !== 'done' && e.line)
@@ -353,6 +378,61 @@ function App() {
       profiles,
       selectedProfileId,
     ],
+  )
+
+  const updatePillFinder = useCallback((messageId, patch) => {
+    setMessages((prev) =>
+      prev.map((message) =>
+        message.id === messageId
+          ? {
+              ...message,
+              pillFinder: { ...message.pillFinder, ...patch },
+            }
+          : message,
+      ),
+    )
+  }, [])
+
+  const handlePillSearch = useCallback(
+    async (messageId, params) => {
+      const requestSessionId = visitRef.current.id
+      updatePillFinder(messageId, {
+        ...params,
+        status: 'loading',
+        candidates: [],
+        error: null,
+      })
+
+      try {
+        const candidates = await identifyPill(params)
+        if (visitRef.current.id !== requestSessionId) return
+        updatePillFinder(messageId, {
+          status: 'success',
+          candidates,
+          error: null,
+        })
+      } catch (error) {
+        if (visitRef.current.id !== requestSessionId) return
+        updatePillFinder(messageId, {
+          status: 'error',
+          candidates: [],
+          error:
+            error instanceof Error
+              ? error.message
+              : '약 조회 중 오류가 발생했습니다.',
+        })
+      }
+    },
+    [updatePillFinder],
+  )
+
+  const handlePillSelect = useCallback(
+    (messageId, candidate) => {
+      if (!candidate?.name) return
+      updatePillFinder(messageId, { selected: candidate })
+      sendUserTurn(`복용한 약은 ${candidate.name}이에요.`)
+    },
+    [sendUserTurn, updatePillFinder],
   )
 
   // 칩 선택 → 사용자 메시지로 보내고 백엔드 응답 칩으로 교체
@@ -456,6 +536,7 @@ function App() {
       ...m,
       body: plainBody(m.body),
       result: cloneResult(m.result),
+      pillFinder: cloneResult(m.pillFinder),
     }))
     if (
       session.visit?.result &&
@@ -598,6 +679,7 @@ function App() {
         ? { src: m.photo.src }
         : undefined,
       result: cloneResult(m.result) ?? undefined,
+      pillFinder: cloneResult(m.pillFinder) ?? undefined,
     }))
     const firstUser = plainMessages.find((m) => m.type === 'user' && m.text)
     return {
@@ -735,6 +817,18 @@ function App() {
                     key={msg.id}
                     result={msg.result}
                     photos={visitPhotos}
+                  />
+                ) : msg.type === 'pill-finder' && msg.pillFinder ? (
+                  <PillFinderCard
+                    key={msg.id}
+                    value={msg.pillFinder}
+                    onChange={(patch) => updatePillFinder(msg.id, patch)}
+                    onSearch={(params) =>
+                      handlePillSearch(msg.id, params)
+                    }
+                    onSelect={(candidate) =>
+                      handlePillSelect(msg.id, candidate)
+                    }
                   />
                 ) : (
                   <UserBubble key={msg.id} photo={msg.photo}>
